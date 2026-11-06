@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-const ORCHESTRATION_ID = '7838179339f5461d966c1b1b23929de7_502d0951-4120-41ff-9da2-7464a95e1e25';
+// These are read from .env via Vite's VITE_ prefix (safe for client bundle, not secret keys)
+const ORCHESTRATION_ID = import.meta.env.VITE_WATSONX_ORCHESTRATION_ID;
+const AGENT_ID = import.meta.env.VITE_WATSONX_AGENT_ID;
 const HOST_URL = 'https://eu-gb.watson-orchestrate.cloud.ibm.com';
 const ROOT_ID = 'wxo-chat-root';
 
@@ -20,9 +22,9 @@ export default function OrchestrateChat() {
       hostURL: HOST_URL,
       rootElementID: ROOT_ID,
       deploymentPlatform: 'ibmcloud',
-      crn: `crn:v1:bluemix:public:watsonx-orchestrate:eu-gb:a/7838179339f5461d966c1b1b23929de7:502d0951-4120-41ff-9da2-7464a95e1e25::`,
+      crn: import.meta.env.VITE_WATSONX_CRN,
       chatOptions: {
-        agentId: '72654d07-d228-4e9e-93b0-61aebeedf283',
+        agentId: AGENT_ID,
         openChatByDefault: true,
         showLauncher: false,
       },
