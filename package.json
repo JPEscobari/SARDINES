@@ -1,0 +1,14 @@
+{
+  "name": "sardines",
+  "version": "1.0.0",
+  "description": "Sales Operations Agent — MERN stack prototype",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "node --watch server/index.js",
+    "client": "npm run dev --prefix client",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

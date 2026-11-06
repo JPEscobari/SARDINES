@@ -1,0 +1,50 @@
+.decisions-panel {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.panel-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #525252;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.75rem;
+}
+
+.panel-error {
+  font-size: 0.8rem;
+  color: #da1e28;
+}
+
+.panel-empty {
+  font-size: 0.875rem;
+  color: #6f6f6f;
+}
+
+.decisions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.decision-tile {
+  padding: 0.75rem !important;
+}
+
+.decision-summary {
+  font-size: 0.875rem;
+  color: #161616;
+  margin: 0 0 0.4rem;
+}
+
+.decision-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #6f6f6f;
+}
+
+.decision-source {
+  font-style: italic;
+}
