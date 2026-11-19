@@ -14,7 +14,7 @@ const MAX_MESSAGES = 15;
  * @param {number} hours     Look-back window in hours
  * @returns {Promise<Array<{time: string, user: string, text: string}>>}
  */
-async function fetchThreadMessages(readerClient, channelId, threadTs, hours) {
+async function fetchThreadMessages(readerClient, channelId, threadTs, hours, includeReferences = false) {
   const cutoff = Date.now() / 1000 - hours * 3600;
 
   const response = await readerClient.conversations.replies({
@@ -35,6 +35,7 @@ async function fetchThreadMessages(readerClient, channelId, threadTs, hours) {
   const messages = (response.messages || [])
     .filter((msg) => parseFloat(msg.ts) >= cutoff && msg.text)
     .map((msg) => ({
+      ...(includeReferences ? { ts: msg.ts } : {}),
       time: new Date(parseFloat(msg.ts) * 1000).toISOString(),
       user: msg.user || 'Unknown',
       text: msg.text,

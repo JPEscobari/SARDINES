@@ -1,0 +1,9 @@
+.ingestion-panel { margin: 1rem 2rem 0; padding: 1.5rem; background: white; border: 1px solid #e0e0e0; }
+.ingestion-panel h2 { font-size: 1.3rem; margin-bottom: .75rem; }
+.ingestion-panel form { display: grid; gap: 1rem; margin: 1rem 0; }
+.ingestion-panel form > button { justify-self: start; }
+.analysis-results { display: grid; gap: 1rem; overflow-wrap: anywhere; }
+.analysis-results h3 { margin: 1rem 0 .5rem; font-size: 1.15rem; }
+.analysis-results .cds--tile { margin-bottom: .75rem; }
+.analysis-results blockquote { border-left: 3px solid #0f62fe; padding: .5rem 1rem; margin-top: .5rem; white-space: pre-wrap; }
+@media (max-width: 600px) { .ingestion-panel { margin: 1rem 1rem 0; padding: 1rem; } }

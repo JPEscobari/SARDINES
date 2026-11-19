@@ -13,7 +13,7 @@ async function getIamToken() {
       grant_type: 'urn:ibm:params:oauth:grant-type:apikey',
       apikey: process.env.WATSONX_API_KEY,
     }),
-    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    { timeout: 15000, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   );
   return response.data.access_token;
 }
@@ -29,7 +29,7 @@ async function sendMessage(prompt) {
   // ── Stub mode ────────────────────────────────────────────────────────────────
   // Set WATSONX_STUB=true in .env to bypass the live API during development.
   if (process.env.WATSONX_STUB === 'true') {
-    console.log('[watsonx stub] prompt:', prompt);
+    console.log('[watsonx] Explicit chat stub mode enabled');
     // Realistic demo responses that reflect the Sales Operations Agent use case
     const responses = [
       `Based on your query, I found 3 open action items linked to this account. The last decision was made on October 15th: the team agreed to proceed with the Q4 proposal. Owner: Sarah Chen. Deadline: November 30th.`,
@@ -42,7 +42,13 @@ async function sendMessage(prompt) {
   }
   // ─────────────────────────────────────────────────────────────────────────────
 
-  const token = await getIamToken();
+  if (['WATSONX_API_KEY', 'WATSONX_INSTANCE_URL', 'WATSONX_AGENT_ID'].some(key => !process.env[key])) {
+    throw Object.assign(new Error('IBM configuration is incomplete'), { code: 'CONFIGURATION_ERROR' });
+  }
+  let token;
+  try { token = await getIamToken(); } catch {
+    throw Object.assign(new Error('IBM authentication failed'), { code: 'IBM_AUTH_FAILED' });
+  }
 
   // Official WatsonX Orchestrate Agent Completions API
   // Source: developer.watson-orchestrate.ibm.com/webchat/get_started#agent-completions-api
@@ -60,6 +66,7 @@ async function sendMessage(prompt) {
         stream: false,
       },
       {
+        timeout: 60000,
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -68,17 +75,14 @@ async function sendMessage(prompt) {
     );
   } catch (err) {
     const status = err.response?.status;
-    const body = JSON.stringify(err.response?.data);
-    console.error(`[watsonx] ${status} error:`, body);
-    throw new Error(`WatsonX responded ${status}: ${body}`);
+    throw Object.assign(new Error('IBM inference request failed'), { code: 'IBM_REQUEST_FAILED', upstreamStatus: status });
   }
 
   // Response shape: { choices: [{ message: { content: '...' } }] }
   const reply = response.data?.choices?.[0]?.message?.content;
   if (reply) return reply;
 
-  console.log('[watsonx] unexpected response shape:', JSON.stringify(response.data));
-  return JSON.stringify(response.data);
+  throw Object.assign(new Error('IBM response has no message content'), { code: 'IBM_RESPONSE_INVALID' });
 }
 
 module.exports = { sendMessage };

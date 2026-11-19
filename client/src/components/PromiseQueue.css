@@ -1,0 +1,11 @@
+.promise-queue { margin: 1rem 2rem; padding: 1.5rem; background: white; border: 1px solid #e0e0e0; }
+.promise-queue h2 { font-size: 1.4rem; margin-bottom: .75rem; }
+.promise-card { margin: 1rem 0; overflow-wrap: anywhere; }
+.promise-card h3 { font-size: 1.2rem; }
+.promise-card h4 { margin: 1rem 0 .5rem; }
+.promise-card p { margin: .5rem 0; }
+.promise-card blockquote { border-left: 3px solid #0f62fe; padding-left: 1rem; white-space: pre-wrap; }
+.promise-card form { display: grid; gap: 1rem; margin: 1rem 0; max-width: 48rem; }
+.source-reference { font-size: .75rem; color: #525252; }
+.proposed-action { border-bottom: 1px solid #c6c6c6; padding: .5rem 0; margin-bottom: 1rem; }
+@media(max-width: 600px) { .promise-queue { margin: 1rem; padding: 1rem; } }
