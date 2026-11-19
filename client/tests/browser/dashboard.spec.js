@@ -110,10 +110,43 @@ test('Action association, owner mapping, persisted review and preview; approval 
 test('replied Action shows evidence and safe Slack link, cannot resend or edit', async ({ page }) => {
   await mockApi(page); await page.goto('/#/follow-ups/action%3Areplied');
   await expect(page.getByText('Checking stock; not complete.', { exact: false })).toBeVisible();
+  await page.getByText('Preview controls (sending already started)', { exact: true }).click();
   await expect(page.getByRole('button', { name: 'Prepare Slack preview' })).toBeDisabled();
+  await page.getByText('Reviewed fields (read-only)', { exact: true }).click();
   await expect(page.getByRole('button', { name: 'Save action review' })).toBeDisabled();
   await expect(page.getByRole('link', { name: 'Open Slack message' })).toHaveAttribute('href', 'https://synthetic.slack.com/archives/DTEST/p1700000000000001');
   await expect(page.getByText('Replies do not mark the Promise completed.', { exact: false })).toBeVisible();
+});
+
+test('media terminal failure is visible and cannot produce stale analysis or save', async ({ page }) => {
+  const calls = await mockApi(page);
+  await page.route('**/api/transcribe/video', route => route.fulfill({ contentType: 'application/x-ndjson', body: '{"stage":"extracting"}\n{"stage":"transcribing"}\n{"success":false,"error":"Synthetic STT timeout"}\n' }));
+  await page.goto('/#/analyze');
+  await page.getByRole('tab', { name: 'Video Upload', exact: true }).click();
+  await page.locator('input[type=file]').setInputFiles({ name: 'synthetic.mp4', mimeType: 'video/mp4', buffer: Buffer.from('mock') });
+  await page.getByRole('button', { name: 'Transcribe', exact: true }).click();
+  await expect(page.getByText('Synthetic STT timeout', { exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Editable Transcript', exact: true })).toHaveValue('');
+  await expect(page.getByRole('button', { name: 'Analyze Transcript' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Save for Review' })).toHaveCount(0);
+  expect(calls.some(c => c.path === '/api/ingest')).toBeFalsy();
+});
+
+test('Promise search, source evidence, linked actions and keyboard source tabs', async ({ page }) => {
+  await mockApi(page); await page.goto('/#/promises');
+  await page.getByRole('searchbox', { name: 'Search promises' }).fill('no match');
+  await expect(page.getByText('No promises match your filters.')).toBeVisible();
+  await page.getByRole('searchbox', { name: 'Search promises' }).fill('Cedar');
+  await page.getByRole('link', { name: 'Send proposal', exact: true }).click();
+  await page.getByRole('button', { name: 'View original source' }).click();
+  await expect(page.getByText('Extracted blocker: Review pending')).toBeVisible();
+  await page.getByText('Original extracted fields (before review)', { exact: true }).click();
+  await expect(page.getByText('Customer: Synthetic Cedar · Owner: Unresolved · Deadline wording: tomorrow', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Analyze', exact: true }).click();
+  await page.getByRole('tab', { name: 'Meeting Notes', exact: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: 'Buyer Email', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('textbox', { name: 'Buyer email', exact: true })).toBeVisible();
 });
 
 test('unavailable metrics are not zero; integration readiness is scoped', async ({ page }) => {
