@@ -9,6 +9,7 @@ require('../services/watsonx.service').sendMessage = async () => JSON.stringify(
 const env = { STT_URL: 'https://api.us-south.speech-to-text.watson.cloud.ibm.com/instances/mock', STT_API_KEY: 'test-only' };
 const service = createSpeechService({ env, http: { post: async url => ({ data: url.includes('iam.cloud') ? { access_token: 'mock', expires_in: 3600 } : { results: [{ final: true, alternatives: [{ transcript: quote, timestamps: [['Synthetic', 0, 0.5]] }] }] } }) } });
 const app = express();
+app.use('/api/transcribe/video', require('../routes/transcribeVideo').createVideoRouter({ env: process.env, service: require('../services/videoToText').createVideoService({ speech: service }) }));
 app.use('/api/transcribe', require('../routes/transcribe').createTranscribeRouter({ service, env }));
 app.use('/api/ingest', require('../routes/ingest'));
 app.use('/api/review', require('../routes/review').createReviewRouter(() => repo));

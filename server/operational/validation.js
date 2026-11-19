@@ -11,7 +11,7 @@ const states = ['needs_review', 'open', 'blocked', 'completed'];
 const transitions = { needs_review: ['open', 'blocked'], open: ['needs_review', 'blocked', 'completed'], blocked: ['needs_review', 'open', 'completed'], completed: ['open'] };
 const common = { id: text, createdAt: text, updatedAt: text, version: { type: 'integer', minimum: 1 } };
 const fields = {
-  source: { ...common, type: { const: 'source' }, sourceType: { enum: ['meeting_note', 'buyer_email', 'audio_transcript', 'slack_thread'] }, content: text, contentHash: text, analysis: analysisSchema, provenance: { const: 'submitted_for_review' } },
+  source: { ...common, type: { const: 'source' }, sourceType: { enum: ['meeting_note', 'buyer_email', 'audio_transcript', 'video_transcript', 'slack_thread'] }, content: text, contentHash: text, analysis: analysisSchema, provenance: { const: 'submitted_for_review' } },
   promise: { ...common, type: { const: 'promise' }, sourceId: text, customerName: nullableText, title: text, ownerName: nullableText, dueText: nullableText, extractedDueAt: nullableText, dueAt: nullableText, deadlineState: { enum: ['unresolved', 'reviewed'] }, status: { enum: states }, sourceQuote: text },
   action: { ...common, type: { const: 'action' }, sourceId: text, promiseId: nullableText, description: text, ownerName: nullableText, dueText: nullableText, extractedDueAt: nullableText, sourceQuote: text, approvalStatus: { enum: ['pending', 'approved', 'rejected'] }, executionStatus: { const: 'disabled' } },
   audit: { ...common, type: { const: 'audit' }, entityId: text, event: { enum: ['source_saved', 'promise_updated', 'action_proposed', 'action_reviewed', 'action_approved', 'action_rejected', 'approval_invalidated', 'slack_previewed', 'slack_send_claimed', 'slack_send_uncertain', 'slack_sent', 'slack_reply_received', 'slack_reconciled'] }, actorId: nullableText, actorType: { enum: ['unauthenticated_local', 'authenticated', 'system'] }, changedFields: { type: 'array', items: text } },
@@ -30,7 +30,7 @@ function validateEntity(value) {
 }
 function validateSave(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some(k => !['sourceType', 'content', 'analysis', 'slack'].includes(k))) throw new ReviewError('Expected sourceType, content and analysis');
-  if (!['meeting_note', 'buyer_email', 'audio_transcript', 'slack_thread'].includes(body.sourceType)) throw new ReviewError('Unsupported source type');
+  if (!['meeting_note', 'buyer_email', 'audio_transcript', 'video_transcript', 'slack_thread'].includes(body.sourceType)) throw new ReviewError('Unsupported source type');
   if (typeof body.content !== 'string' || !body.content.trim() || body.content.length > 20000) throw new ReviewError('Content must contain 1 to 20000 characters');
   require('./slackSource').validate(body, ReviewError);
   if (!analysisValid(body.analysis)) throw new ReviewError('Invalid analysis schema');

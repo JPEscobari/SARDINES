@@ -24,5 +24,7 @@ test('server loads repository .env independently of launch directory and mounts 
   });
   assert.equal(envPath, path.resolve(__dirname, '../../.env'));
   assert.equal(mounts.filter(args => args[0] === '/api/ingest').length, 1);
+  assert.equal(mounts.filter(args => args[0] === '/api/transcribe/video').length, 1);
+  assert.ok(mounts.findIndex(args => args[0] === '/api/transcribe/video') < mounts.findIndex(args => args[0] === '/api/transcribe'));
   assert.ok(mounts.findIndex(args => args[0] === '/api/ingest') < mounts.findIndex(args => args[0] === 'parser'));
 });

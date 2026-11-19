@@ -13,7 +13,7 @@ function createReviewRouter(getRepository, { getPrincipal = () => null } = {}) {
   const handle = fn => async (req, res, next) => { try { await fn(req, res, getRepository()); } catch (error) { next(error); } };
   const found = record => { if (!record) throw new ReviewError('Record not found', 404, 'NOT_FOUND'); return record; };
   router.post('/sources', handle(async (req, res, repo) => {
-    if (!['meeting_note', 'buyer_email', 'audio_transcript'].includes(req.body?.sourceType) || req.body.slack) throw new ReviewError('Slack sources require the verified Bolt integration');
+    if (!['meeting_note', 'buyer_email', 'audio_transcript', 'video_transcript'].includes(req.body?.sourceType) || req.body.slack) throw new ReviewError('Slack sources require the verified Bolt integration');
     const result = await repo.saveAnalysis(req.body);
     res.status(result.duplicate ? 200 : 201).json({ success: true, persisted: true, ...result });
   }));

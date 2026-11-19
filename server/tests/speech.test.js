@@ -43,7 +43,7 @@ test('empty transcripts allowed; malformed recognition and timing rejected', () 
 });
 test('missing credentials, URL spoof and IAM failures fail closed', async () => {
   const http = mockHttp();
-  for (const config of [{}, { ...env, STT_URL: 'https://attacker.example/instances/x' }]) await assert.rejects(createSpeechService({ env: config, http }).transcribe(wav(), 'audio/wav'), e => e.code === 'STT_CONFIGURATION');
+  for (const config of [{}, { ...env, STT_URL: 'https://attacker.example/instances/x' }]) await assert.rejects(createSpeechService({ env: config, http }).transcribe(wav(), 'audio/wav'), e => ['STT_CONFIGURATION', 'STT_URL_INVALID'].includes(e.code));
   assert.equal(http.calls.length, 0);
   await assert.rejects(createSpeechService({ env, http: { post: async () => { throw new Error('IAM secret'); } } }).transcribe(wav(), 'audio/wav'), e => e.code === 'STT_AUTH_FAILED');
 });
@@ -81,3 +81,20 @@ test('HTTP permits one active transcription and fails closed in production', asy
   assert.equal((await first).status, 200);
 });
 module.exports = { wav };
+
+test('model availability and diagnostics distinguish configuration, IAM, lookup, recognition and parsing', async () => {
+  const http = mockHttp(); const stages = [];
+  http.get = async (url, options) => { assert.equal(url, env.STT_URL + '/v1/models'); assert.equal(options.maxRedirects, 0); return { data: { models: [{ name: 'en-US_Multimedia' }] } }; };
+  const service = createSpeechService({ env, http, onStage: s => stages.push(s) });
+  assert.equal((await service.verifyModel('en-US_Multimedia')).available, true);
+  await service.transcribe(wav(), 'audio/wav');
+  assert.deepEqual(stages, ['configuration','iam_authentication','model_availability','wav_validation','configuration','iam_authentication','http_recognition','response_parsing']);
+  await assert.rejects(service.verifyModel('absent'), e => e.code === 'STT_MODEL_UNAVAILABLE' && e.httpStatus === 200);
+  http.get = async () => { throw { response: { status: 403, data: 'secret' } }; };
+  await assert.rejects(service.verifyModel(), e => e.code === 'STT_AUTH_FAILED' && e.httpStatus === 403 && !e.message.includes('secret'));
+});
+test('malformed configured URL fails before any IAM or audio request', async () => {
+  const http = mockHttp(); const stages = [];
+  await assert.rejects(createSpeechService({ env: { ...env, STT_URL: 'copied label ' + env.STT_URL }, http, onStage: s => stages.push(s) }).transcribe(wav(), 'audio/wav'), e => e.code === 'STT_URL_INVALID' && e.httpStatus === null);
+  assert.equal(http.calls.length, 0); assert.deepEqual(stages, ['wav_validation', 'configuration']);
+});

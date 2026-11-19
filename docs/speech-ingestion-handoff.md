@@ -1,5 +1,9 @@
 # Phase 5A — IBM Speech to Text adapter and audio transcript ingestion
 
+## Current follow-up
+
+The status below is the historical Phase 5A implementation report. Since then, the STT URL configuration issue was corrected, live IAM/model availability and STT passed, and the user manually verified the complete WAV → editable transcript → Orchestrate → Cloudant flow. Phase 5B now adds short MP4 audio extraction; see [video-ingestion-handoff.md](video-ingestion-handoff.md) for current limits, real synthetic integration results, changed files and remaining browser verification. The current live STT test prints safe category/code/status/stage fields, not transcript text.
+
 ## Status — November 19, 2026
 
 Implemented the server adapter and Carbon upload/transcript interface with mocked verification. **Live IBM STT is not connected or verified.** No `STT_*`, `SPEECH_*` or `IBM_STT_*` configuration was found in repository `.env` or the current process environment. A filename-only search found no other repository environment file. The existing team resource `watsonx-Hackathon STT` is user-reported; its instance models and credentials have not been queried by this implementation. No service, credential or paid resource was created.

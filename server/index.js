@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({ origin: 'http://localhost:5173' }));
+app.use('/api/transcribe/video', require('./routes/transcribeVideo'));
 app.use('/api/transcribe', require('./routes/transcribe'));
 app.use('/api/ingest', require('./routes/ingest'));
 app.use('/api/ready', require('./routes/readiness'));
