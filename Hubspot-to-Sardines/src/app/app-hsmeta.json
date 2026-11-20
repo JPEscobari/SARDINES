@@ -8,7 +8,7 @@
     "auth": {
       "type": "oauth",
       "redirectUrls": [
-        "http://localhost:3000"
+        "https://eu-gb.watson-orchestrate.cloud.ibm.com/mfe_connectors/api/v1/agentic/oauth/_callback"
       ],
       "requiredScopes": [
         "oauth",
