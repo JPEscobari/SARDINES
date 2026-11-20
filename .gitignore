@@ -1,5 +1,31 @@
 node_modules/
 .env
+.env.*
+!.env.example
 dist/
 client/dist/
 *.log
+
+# Local operational records and SQLite journal files
+server/data/
+
+# Synthetic browser test output
+client/test-results/
+client/playwright-report/
+
+# Local databases and private raw media, even outside server/data
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.db-wal
+*.db-shm
+*.wav
+*.mp4
+*.mp3
+*.m4a
+*.mov
+*.webm

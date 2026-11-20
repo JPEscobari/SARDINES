@@ -1,0 +1,12 @@
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+const assert = require('node:assert/strict');
+const filename = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'sardines-restart-')), 'restart.sqlite');
+const modulePath = path.resolve(__dirname, '../operational/localRepository.js');
+const writer = `const {LocalRepository}=require(process.argv[1]); const r=new LocalRepository(process.argv[2]); r.saveAnalysis({sourceType:'meeting_note',content:'Acme promised a quote.',analysis:{summary:'Quote',promises:[{customerName:'Acme',title:'Quote',ownerName:null,dueAt:null,dueText:null,sourceQuote:'Acme promised a quote.'}],actions:[],blockers:[]}}).then(()=>r.close());`;
+const reader = `const {LocalRepository}=require(process.argv[1]); const r=new LocalRepository(process.argv[2]); r.listPromises().then(p=>{console.log(p.length);r.close()});`;
+execFileSync(process.execPath, ['-e', writer, modulePath, filename]);
+assert.equal(execFileSync(process.execPath, ['-e', reader, modulePath, filename], { encoding: 'utf8' }).trim(), '1');
+console.log('Separate-process SQLite persistence passed. Synthetic database: ' + filename);

@@ -1,0 +1,144 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "summary",
+    "promises",
+    "actions",
+    "blockers"
+  ],
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "promises": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "customerName",
+          "title",
+          "ownerName",
+          "dueAt",
+          "dueText",
+          "sourceQuote"
+        ],
+        "properties": {
+          "customerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dueAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dueText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sourceQuote": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "description",
+          "ownerName",
+          "dueAt",
+          "dueText",
+          "sourceQuote"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dueAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dueText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sourceQuote": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "description",
+          "sourceQuote"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "sourceQuote": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "description",
+          "sourceQuote"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "sourceQuote": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

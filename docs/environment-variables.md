@@ -1,0 +1,70 @@
+# Environment variable inventory
+
+This inventory covers all 43 application/browser/script settings found in JavaScript and legacy Python source, including dynamically constructed FFmpeg paths and STT limit keys. Root `.env.example` declares each once. Blank credentials are intentional. Do not copy the entire root example into the client: Vite needs only the explicitly browser-visible settings, normally none.
+
+## Loading and precedence
+
+- Express loads repository-root `.env` by an absolute path derived from `server/index.js`, independent of launch directory. Existing process environment wins; dotenv does not override it. Repository selection is process-scoped, so restart after changes.
+- Bolt first loads `.env` relative to its working directory, then repository-root `.env` without override. `npm start --prefix slack-ai-summarizer` runs in that package, so an old `slack-ai-summarizer/.env` can shadow root values. Use one authoritative server configuration and inspect/remove stale process overrides deliberately; never print the environment wholesale. The follow-up CLIs load root `.env` directly and can therefore disagree with a package-local Bolt configuration.
+- Vite uses `client/` as its project root. `VITE_*` values belong in the frontend terminal or a private `client/.env` (not tracked). They are exposed in browser bundles and are never credentials. The current config reads `process.env.API_PROXY_TARGET` directly and does not call `loadEnv`; export this variable in the frontend terminal. Putting it only in either `.env` does not configure that proxy expression. Root example entries serve as an inventory, not automatic frontend loading.
+- `TEST_API_BASE` must be exported in the test terminal; `test-ingest-live.js` does not load dotenv. Other listed live Node scripts load the root file. Set opt-in flags per command/session and clear them afterward; keep them disabled in persistent config.
+- OS `PATH` (Windows spelling `Path` also supported) is inherited for executable discovery; do not replace it with an example entry. `os.tmpdir()` supplies media scratch space (OS-managed TEMP/TMP on Windows or TMPDIR on Unix). No application TEMP_DIR, FFmpeg timeout override, separate video-duration variable or Slack signing-secret variable is implemented. Protect the service account's temp directory.
+
+## Settings
+
+“Required” is conditional on using that subsystem. An empty SQLite-backed Dashboard requires no IBM or Slack credential; real analysis requires Orchestrate. Values in the example below are defaults/placeholders, not a claim that a service/model is provisioned.
+
+| Variable | Required / consumer | Safe example or default | Purpose / credential source |
+| --- | --- | --- | --- |
+| `NODE_ENV` | Optional; Express, Slack | `development` | Local mode; production disables review/media/demo operations, not all routes. Set locally; not authentication. |
+| `PORT` | Optional; Express | `5000` | Loopback backend port. Set locally; frontend proxy must match. |
+| `OPERATIONAL_STORE` | Optional; cloudant to opt in; Express, Slack, repository scripts | `sqlite` | sqlite (default) or cloudant; no automatic migration/fallback. Use sqlite until shared-database access is granted. |
+| `SARDINES_DB_PATH` | Optional; SQLite repository | empty | Database path; blank uses server/data/operational.sqlite resolved from the repository. Prefer an absolute path under ignored server/data; relative overrides follow process cwd. |
+| `MONGO_URI` | Optional, legacy only; Express / Mongoose | empty | Mongo connection for original Chat, Tasks and Decisions; not operational storage. Ask the legacy database owner; example mongodb://127.0.0.1:27017/sardines_legacy. |
+| `WATSONX_API_KEY` | Required for extraction; Express; Slack Save to SARDINES; live IBM scripts | empty | IAM API key used by server/services/watsonx.service.js. Authorized IBM account/service owner; not an alias of IBM_API_KEY. |
+| `WATSONX_INSTANCE_URL` | Required for extraction; Orchestrate adapter | empty | Instance base URL; adapter appends /v1/orchestrate/{agentId}/chat/completions. Copy the existing Orchestrate instance API endpoint; omit trailing slash and appended completion path. |
+| `WATSONX_AGENT_ID` | Required for extraction; Orchestrate adapter | empty | Existing deployed agent identifier. Obtain from authorized agent owner; do not redeploy an agent for setup. |
+| `WATSONX_STUB` | Optional; must not be true for extraction; Legacy chat / extraction | `false` | true only stubs legacy chat; structured ingestion explicitly rejects stub mode. Keep false. Offline browser fixtures mock APIs separately. |
+| `IBM_API_KEY` | Required for Slack summary; Slack watsonx.ai adapter; legacy Python | empty | IAM key for watsonx.ai / Granite; NOT read by the Orchestrate adapter. Authorized IBM account/project owner. |
+| `WATSONX_URL` | Required for Slack summary; Slack watsonx.ai adapter; legacy Python | empty | watsonx.ai regional origin; adapter appends /ml/v1/text/chat. Existing project regional endpoint, e.g. https://us-south.ml.cloud.ibm.com; no trailing slash. |
+| `WATSONX_PROJECT_ID` | Required for Slack summary; Slack watsonx.ai adapter; legacy Python | empty | Project owning model access. Authorized watsonx.ai project settings/owner. |
+| `WATSONX_MODEL_ID` | Required for Slack summary; Slack watsonx.ai adapter; legacy Python | `ibm/granite-4-h-small` | Model identifier; example used by repository tests, not an availability guarantee. Confirm supported model with the project owner; no model default in source. |
+| `CLOUDANT_URL` | Required only for cloudant backend; Cloudant client | empty | HTTPS service origin, without database/path/query or embedded credentials. Existing Cloudant service credentials; example https://<service-host>.cloudantnosqldb.appdomain.cloud. |
+| `CLOUDANT_API_KEY` | Required only for cloudant backend; Cloudant client | empty | IAM API key with access to the chosen database. Authorized Cloudant service/account owner. |
+| `CLOUDANT_DATABASE` | Required only for cloudant backend; Cloudant client | empty | Existing non-partitioned application database; never automatically created. Database owner grants access and supplies name; shared sardines-dev must not be reset. |
+| `STT_URL` | Required for transcription; IBM STT adapter | empty | Exact HTTPS regional instance URL; no labels, query, port or credentials. Existing STT Manage/API details: https://api.<region>.speech-to-text.watson.cloud.ibm.com/instances/<instance-id>. |
+| `STT_API_KEY` | Required for transcription; IBM STT adapter | empty | IAM API key for that STT instance. Existing service credentials from authorized STT owner. |
+| `STT_MODEL` | Optional; IBM STT adapter | `en-US_Multimedia` | Default en-US_Multimedia; also permits en-GB_Multimedia/en-AU_Multimedia if instance supports them. Verify model availability on the configured instance. |
+| `STT_MAX_UPLOAD_BYTES` | Optional; WAV route, STT and video adapter | `8388608` | 8 MiB default, positive integer <=16777216; browser WAV cap remains 8 MiB. Local limit, not a credential. |
+| `STT_MAX_DURATION_SECONDS` | Optional; WAV/STT and video adapter | `120` | 120 default, positive integer <=300; video remains capped at min(120, this setting). Local limit; one-hour recordings unsupported. |
+| `FFMPEG_PATH` | Optional with PATH; otherwise required for video; Video extraction | empty | Absolute ffmpeg.exe (Windows) / ffmpeg executable; blank searches absolute PATH directories, excluding cwd. Trusted local install; e.g. C:/Tools/ffmpeg/bin/ffmpeg.exe; no arguments or extra embedded quotes. |
+| `FFPROBE_PATH` | Optional with PATH; otherwise required for video; Video validation | empty | Absolute ffprobe.exe (Windows) / ffprobe executable; invalid explicit path does not fall back. Trusted local install; e.g. C:/Tools/ffmpeg/bin/ffprobe.exe. |
+| `VIDEO_MAX_UPLOAD_BYTES` | Optional; Video route/service | `33554432` | 32 MiB default, positive integer <=67108864; browser cap remains 32 MiB. No separate VIDEO_MAX_DURATION_SECONDS is implemented. |
+| `SLACK_APP_TOKEN` | Required for Bolt; Slack Socket Mode | empty | App-level token with connections:write. Authorized Slack app owner, Basic Information / app-level tokens. |
+| `SLACK_BOT_TOKEN` | Required for Bolt and follow-up tools; Slack Bolt / CLI | empty | Bot OAuth token; scopes described in integration setup. Authorized app installation, OAuth & Permissions. |
+| `SLACK_USER_TOKEN` | Required for current summary reader; Slack thread reader; legacy Python | empty | User OAuth token for conversations.replies; bot token is not a fallback in this code. Approved Slack installation/user with access to intended conversations. |
+| `SARDINES_SLACK_TEAM_ID` | Required for save/follow-up/replies; Slack integration | empty | Exact allowed workspace ID; blank denies Save and reply processing. Approved workspace administrator; synthetic format TTEST. |
+| `SARDINES_SLACK_SAVE_USERS` | Required for Slack Save; Slack Save bridge | empty | Comma-separated approved Slack user IDs; blank denies saving, not ordinary summaries. Approved development user IDs; synthetic format UTEST,UOTHER. |
+| `SARDINES_SLACK_RECIPIENTS` | Required for previews/follow-up/replies; Express and Slack integration | `[]` | JSON array with exactly label, ownerId, teamId, userId; maximum 30 and unique ownerIds. Approved directory, not AI output. Example in integration setup. |
+| `SARDINES_SLACK_SEND_ENABLED` | Optional; exact true only for authorized demo; Follow-up CLI | `false` | Default-disabled gate; also needs interactive CLI, version/hash and verified recipient. Does NOT disable normal summarizer response messages or reply storage. |
+| `SARDINES_SLACK_RECOVERY_ENABLED` | Optional; exact true only for authorized recovery; Recovery CLI | `false` | Gate for confirmed reconciliation/reply replay writes, not inspection. Keep false during onboarding. |
+| `API_PROXY_TARGET` | Optional; set in Vite terminal; client/vite.config.js | `http://127.0.0.1:5000` | Development /api proxy target; source fallback is http://localhost:5000. Root .env entry alone is NOT loaded into Vite config; export in launching terminal. |
+| `VITE_API_BASE` | Optional; browser-visible; React API client | empty | Blank defaults to /api, recommended with same-origin dev proxy. Set in client/.env or Vite terminal, not root .env alone; never include credentials. |
+| `VITE_WATSONX_ORCHESTRATION_ID` | Optional, unused by current Dashboard; Preserved OrchestrateChat.jsx | empty | Public embed orchestration identifier; component is not mounted. Authorized embed settings only; omit for normal setup. |
+| `VITE_WATSONX_AGENT_ID` | Optional, unused by current Dashboard; Preserved OrchestrateChat.jsx | empty | Public embed agent identifier, distinct variable from server WATSONX_AGENT_ID. Authorized embed settings; source hardcodes eu-gb host. |
+| `VITE_WATSONX_CRN` | Optional, unused by current Dashboard; Preserved OrchestrateChat.jsx | empty | Browser-visible resource identifier, not a secret or server credential. Authorized embed settings; do not populate unless intentionally using the embed. |
+| `TEST_API_BASE` | Optional; launching terminal; test-ingest-live.js | `http://127.0.0.1:5000` | Origin of running backend; script default is http://localhost:5001. Script does NOT load root .env; set in terminal explicitly. |
+| `CLOUDANT_LIVE_TEST` | Required true to run live Cloudant test; test-cloudant-live.js | `false` | Read-only unless both --write and write gate supplied; forces Cloudant even if normal store is SQLite. Explicit authorized test only. |
+| `CLOUDANT_TEST_ALLOW_WRITE` | Required development plus --write to mutate; test-cloudant-live.js | empty | Creates/retains a synthetic source and edits its Promise; not a database-name safety check. Use only after owner authorizes a designated development database. |
+| `STT_LIVE_TEST` | Required true for live STT script; test-stt-live.js | `false` | Requires approved 30-60 second PCM WAV; model lookup and real recognition; no persistence. Explicit authorized IBM usage only. |
+| `VIDEO_LIVE_TEST` | Required true for live video script; test-video-live.js | `false` | Real extraction and STT for one short synthetic MP4. Explicit authorized IBM usage only. |
+| `VIDEO_LIVE_SAVE` | Optional true adds live extraction and write; test-video-live.js | `false` | Also calls Orchestrate and saves a new source; requires cloudant, sardines-dev and non-stub Orchestrate. Separate explicit shared-database write authorization; keep false for transcription-only test. |
+
+## Naming inconsistencies and unsupported aliases
+
+- `WATSONX_API_KEY` authenticates Orchestrate; `IBM_API_KEY` authenticates the Slack watsonx.ai/Granite summarizer. There is no alias/fallback between them. The previous example put IBM_API_KEY under Orchestrate and omitted WATSONX_API_KEY; that was incorrect.
+- `WATSONX_INSTANCE_URL` is the Orchestrate instance base; `WATSONX_URL` is the watsonx.ai regional service origin. They are not interchangeable.
+- `SPEECH_TO_TEXT_IAM_APIKEY` and `SPEECH_TO_TEXT_AUTH_TYPE` were present by name in the existing private environment but are **not read by this implementation**. Only STT_API_KEY and the documented STT settings apply. They are deliberately not added as fake supported aliases.
+- Name/presence-only inspection found duplicate `OPERATIONAL_STORE` and `SARDINES_SLACK_SEND_ENABLED` declarations in the existing local environment. It was left untouched. Within one dotenv file the last declaration wins; a pre-existing process value still wins over the file. Resolve duplicates manually with the owner to avoid ambiguity. The new example has no duplicates.
+- Root `install:all` installs root/server/client only, not Slack. The nested `slack-ai-summarizer/server/package-lock.json` is not the main backend; the working adapter lives in root `server/`.
+- `NODE_ENV=production` closes development review/media and Slack demo boundaries, but is not complete production security: `/api/ingest` and preserved legacy routes are not all closed by that flag. Do not publicly expose the app.
