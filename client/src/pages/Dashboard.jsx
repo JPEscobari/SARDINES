@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Theme, Header, HeaderName, HeaderMenuButton, SideNav, SideNavItems, SideNavLink, SkipToContent } from '@carbon/react';
-import { Home, DocumentAdd, Task, Chat, Activity, Connect } from '@carbon/icons-react';
+import { Home, ChatBot, Task, Chat, Activity, Connect } from '@carbon/icons-react';
 import { parseRoute, routeHref } from '../app/navigation';
 import Overview from './Overview';
 import ActivityPage from './Activity';
 import Integrations from './Integrations';
 import Legacy from './Legacy';
-import IngestionPanel from '../components/IngestionPanel';
+import SardinesAssistant from '../components/SardinesAssistant';
 import PromiseQueue from '../components/PromiseQueue';
 import ActionReview from '../components/ActionReview';
 import './Dashboard.css';
 const navigation = [
   ['overview', 'Overview', Home, 'Your commitments, connected.'],
-  ['analyze', 'Analyze', DocumentAdd, 'Turn meeting notes, email and recordings into reviewable next steps.'],
+  ['analyze', 'SARDINES Assistant', ChatBot, 'Ask anything or paste meeting notes and emails — SARDINES handles the rest.'],
   ['promises', 'Promises', Task, 'A Promise is a commitment to a customer. Review the evidence before updating it.'],
   ['follow-ups', 'Follow-ups', Chat, 'Review an internal action, prepare a message, and track the response.'],
   ['activity', 'Activity', Activity, 'A read-only history of saved sources, reviews and follow-ups.'],
@@ -38,8 +38,8 @@ export default function Dashboard() {
       <div className="nav-footnote"><strong>Built for follow-through.</strong><p>AI suggests. People review.</p><a href={routeHref('integrations')}>Integration status →</a></div>
     </SideNav>
     <main id="main-content" className="workspace" tabIndex={-1}><div className="page-heading"><p className="eyebrow">SARDINES / WORKSPACE</p><h1 ref={title} tabIndex={-1}>{current[1]}</h1><p>{current[3]}</p></div>
-      {/* Keep the Analyze workspace mounted: navigation never loses transcript or in-flight results. */}
-      <div hidden={route.page !== 'analyze'}><IngestionPanel onSaved={changed} /></div>
+      {/* Keep the Assistant mounted: navigation never loses conversation state. */}
+      <div hidden={route.page !== 'analyze'}><SardinesAssistant onSaved={changed} /></div>
       {screens[route.page]}
       <footer className="workspace-footer">A saved review is not business approval. External operations require separate authorization.</footer>
     </main>
