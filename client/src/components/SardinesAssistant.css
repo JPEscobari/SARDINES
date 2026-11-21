@@ -230,3 +230,34 @@
   padding: 0 1rem 0.5rem;
   margin: 0;
 }
+
+/* ── Mic button ── */
+.sa-mic-btn--recording {
+  background: #da1e28;
+  border-color: #da1e28;
+  color: #fff;
+}
+
+.sa-mic-btn--recording:hover {
+  background: #ba1b23;
+  border-color: #ba1b23;
+}
+
+/* Pulsing ring while recording */
+@keyframes sa-mic-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(218, 30, 40, 0.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(218, 30, 40, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(218, 30, 40, 0); }
+}
+
+.sa-mic-btn--recording {
+  animation: sa-mic-pulse 1.4s ease-out infinite;
+}
+
+.sa-mic-indicator {
+  font-size: 0.75rem;
+  color: #da1e28;
+  font-weight: 600;
+  align-self: center;
+  white-space: nowrap;
+}

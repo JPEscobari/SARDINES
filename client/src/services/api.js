@@ -81,8 +81,25 @@ export const getReviewSource = id => reviewRequest(`/sources/${encodeURIComponen
 export const listSlackRecipients = () => reviewRequest('/slack-recipients');
 export const previewSlackFollowup = (id, patch) => reviewRequest(`/actions/${encodeURIComponent(id)}/slack-preview`, { method: 'POST', body: JSON.stringify(patch) });
 
+export async function chatAgent(message) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/chat/agent`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }), signal: AbortSignal.timeout(90000),
+    });
+  } catch {
+    throw new Error('Cannot reach the agent or the request timed out. Please try again.');
+  }
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data?.success) throw new Error(data?.error ? `${data.error}${data.code ? ` (${data.code})` : ''}` : 'Agent is unavailable.');
+  if (typeof data.reply !== 'string') throw new Error('The agent returned an invalid response.');
+  return data.reply;
+}
+
 export async function transcribeAudio(file) {
-  if (!file.name.toLowerCase().endsWith('.wav')) throw new Error('Choose a PCM WAV file. Use Video Upload for MP4.');
+  // file may be a File (from disk) or a Blob (from mic recorder — no .name)
+  if (file.name && !file.name.toLowerCase().endsWith('.wav')) throw new Error('Choose a PCM WAV file. Use Video Upload for MP4.');
   if (!file.size || file.size > 8 * 1024 * 1024) throw new Error('Choose a WAV file between 1 byte and 8 MiB.');
   let response;
   try { response = await fetch(`${API_BASE}/transcribe`, { method: 'POST', headers: { 'Content-Type': 'audio/wav' }, body: file, signal: AbortSignal.timeout(115000) }); }

@@ -11,6 +11,7 @@ app.use(cors({ origin: 'http://localhost:5173' }));
 app.use('/api/transcribe/video', require('./routes/transcribeVideo'));
 app.use('/api/transcribe', require('./routes/transcribe'));
 app.use('/api/ingest', require('./routes/ingest'));
+app.use('/api/chat/agent', require('./routes/chatAgent'));
 app.use('/api/ready', require('./routes/readiness'));
 app.use('/api/review', require('./routes/review'));
 app.use(express.json());

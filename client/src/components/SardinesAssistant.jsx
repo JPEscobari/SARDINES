@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button, TextArea, InlineLoading, InlineNotification, Tile } from '@carbon/react';
-import { Send, Attachment } from '@carbon/icons-react';
-import { analyzeText, saveForReview } from '../services/api';
+import { Send, Attachment, Microphone, Stop } from '@carbon/icons-react';
+import { analyzeText, saveForReview, transcribeAudio, chatAgent } from '../services/api';
 import AudioUpload from './AudioUpload';
+import { useMicRecorder } from '../hooks/useMicRecorder';
 import './SardinesAssistant.css';
 
 const WELCOME = {
@@ -114,14 +115,14 @@ export default function SardinesAssistant({ onSaved }) {
   const [error, setError] = useState('');
   const [showAttach, setShowAttach] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [micStage, setMicStage] = useState(''); // '' | 'recording' | 'processing'
   const [sourceType, setSourceType] = useState('meeting_note');
   const [lastContent, setLastContent] = useState('');
   const lastMsgRef = useRef(null);
+  const { recording, start: startMic, stop: stopMic, error: micError } = useMicRecorder();
 
   useEffect(() => {
-    if (!loading) {
-      lastMsgRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    lastMsgRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages, loading]);
 
   async function send(text) {
@@ -132,12 +133,27 @@ export default function SardinesAssistant({ onSaved }) {
     setMessages(prev => [...prev, { role: 'user', content: trimmed }]);
     setLoading(true);
     setLastContent(trimmed);
+    // Only run structured extraction when the user loaded a transcript via the attach panel.
+    // All other messages — including voice queries — go straight to the agent as plain chat.
+    const isTranscript = ['audio_transcript', 'video_transcript'].includes(sourceType);
     try {
-      const data = await analyzeText(sourceType, trimmed);
-      const analysis = data.analysis;
-      setMessages(prev => [...prev, { role: 'assistant', analysis }]);
+      if (isTranscript) {
+        const data = await analyzeText(sourceType, trimmed);
+        setMessages(prev => [...prev, { role: 'assistant', analysis: data.analysis }]);
+        // Reset sourceType so follow-up messages go through chat, not extraction
+        setSourceType('meeting_note');
+      } else {
+        const reply = await chatAgent(trimmed);
+        // The agent may return a JSON extraction when given meeting notes or emails.
+        // Detect this and render it as a structured result with a Save button.
+        if (isExtractionResult(reply)) {
+          const analysis = JSON.parse(reply);
+          setMessages(prev => [...prev, { role: 'assistant', analysis }]);
+        } else {
+          setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+        }
+      }
     } catch (err) {
-      // If structured extraction fails (e.g. plain question), show error as chat bubble
       setMessages(prev => [...prev, { role: 'assistant', content: err.message }]);
     } finally { setLoading(false); }
   }
@@ -145,6 +161,28 @@ export default function SardinesAssistant({ onSaved }) {
   function handleTranscript(transcript) {
     setShowAttach(false);
     setInput(transcript);
+  }
+
+  async function handleMicClick() {
+    if (recording) {
+      // Stop and transcribe
+      setMicStage('processing');
+      const wav = await stopMic();
+      if (!wav) { setMicStage(''); return; }
+      setTranscribing(true);
+      try {
+        const data = await transcribeAudio(wav);
+        setInput(data.transcript);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setTranscribing(false);
+        setMicStage('');
+      }
+    } else {
+      const ok = await startMic();
+      if (ok) setMicStage('recording');
+    }
   }
 
   function handleKeyDown(e) {
@@ -170,7 +208,7 @@ export default function SardinesAssistant({ onSaved }) {
         </div>
       )}
 
-      {error && <InlineNotification kind="error" title="Error" subtitle={error} hideCloseButton onCloseButtonClick={() => setError('')} />}
+      {(error || micError) && <InlineNotification kind="error" title="Error" subtitle={error || micError} hideCloseButton onCloseButtonClick={() => setError('')} />}
 
       {showAttach && (
         <div className="sa-attach-panel">
@@ -187,9 +225,20 @@ export default function SardinesAssistant({ onSaved }) {
       )}
 
       <div className="sa-input-row">
-        <button className="sa-attach-btn" onClick={() => setShowAttach(v => !v)} title="Attach audio or video" disabled={loading || transcribing}>
+        <button className="sa-attach-btn" onClick={() => setShowAttach(v => !v)} title="Attach audio or video" disabled={loading || transcribing || recording}>
           <Attachment size={20} />
         </button>
+        <button
+          className={`sa-attach-btn sa-mic-btn${recording ? ' sa-mic-btn--recording' : ''}`}
+          onClick={handleMicClick}
+          title={recording ? 'Stop recording' : micStage === 'processing' ? 'Processing…' : 'Record voice message'}
+          disabled={loading || transcribing && !recording || micStage === 'processing'}
+          aria-label={recording ? 'Stop recording' : 'Record voice message'}
+        >
+          {recording ? <Stop size={20} /> : <Microphone size={20} />}
+        </button>
+        {micStage === 'recording' && <span className="sa-mic-indicator" aria-live="polite">Recording…</span>}
+        {micStage === 'processing' && <span className="sa-mic-indicator" aria-live="polite">Transcribing…</span>}
         <TextArea
           id="sa-input"
           labelText=""
