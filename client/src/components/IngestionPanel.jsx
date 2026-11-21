@@ -38,7 +38,7 @@ export default function IngestionPanel({ onSaved }) {
     setSaving(true); setSaveError('');
     try {
       const result = await saveForReview(sourceType, content, analysis);
-      setSaved(result.duplicate ? 'Already saved. Existing review records were preserved.' : 'Saved for review in the Promise Queue.');
+      setSaved(result.duplicate ? 'Already saved. Existing review records were preserved.' : 'Saved for review in the Task Queue.');
       onSaved?.();
     } catch (err) { setSaveError(err.message); }
     finally { setSaving(false); }
@@ -61,15 +61,15 @@ export default function IngestionPanel({ onSaved }) {
       </Tabs>
       {error && <InlineNotification kind="error" title="Analysis failed" subtitle={error} hideCloseButton />}
       {analysis && <div className="analysis-results" aria-live="polite">
-        <div className="section-heading"><div><h2>Review the suggestions</h2><p>{saved ? 'Saved for review. Continue in the Promise Queue.' : 'Check evidence and unresolved fields. Nothing is saved yet.'}</p></div><Button onClick={save} disabled={saving || !!saved}>💾 Save to Tasks</Button></div>
+        <div className="section-heading"><div><h2>Review the suggestions</h2><p>{saved ? 'Saved for review. Continue in the Task Queue.' : 'Check evidence and unresolved fields. Nothing is saved yet.'}</p></div><Button onClick={save} disabled={saving || !!saved}>💾 Save to Tasks</Button></div>
         {saving && <InlineLoading description="Saving review records…" />}
         {saved && <InlineNotification kind="success" title="Stored" subtitle={saved} hideCloseButton />}
-        {saved && <a href="#/promises">Open Promise Queue →</a>}
+        {saved && <a href="#/promises">Open Task Queue →</a>}
         {saveError && <InlineNotification kind="error" title="Save failed" subtitle={saveError} hideCloseButton />}
         <h3>Executive Summary</h3><p>{analysis.summary || 'No summary returned.'}</p>
         <p>Extracted fields require review. Date text may refer to a delivery rather than a commitment deadline.</p>
         {[
-          ['Customer Promises', analysis.promises], ['Action Items', analysis.actions], ['Blockers', analysis.blockers],
+          ['Customer Tasks', analysis.promises], ['Action Items', analysis.actions], ['Blockers', analysis.blockers],
         ].map(([label, items]) => <section key={label}>
           <h3>{label}</h3>
           {!items.length && <p>None identified.</p>}

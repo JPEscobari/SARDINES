@@ -13,7 +13,7 @@ import './Dashboard.css';
 const navigation = [
   ['overview', 'Overview', Home, 'Your commitments, connected.'],
   ['analyze', 'SARDINES Assistant', ChatBot, 'Ask anything or paste meeting notes and emails — SARDINES handles the rest.'],
-  ['promises', 'Promises', Task, 'A Promise is a commitment to a customer. Review the evidence before updating it.'],
+  ['promises', 'Tasks', Task, 'A Task is a commitment to a customer. Review the evidence before updating it.'],
   ['follow-ups', 'Follow-ups', Chat, 'Review an internal action, prepare a message, and track the response.'],
   ['activity', 'Activity', Activity, 'A read-only history of saved sources, reviews and follow-ups.'],
   ['integrations', 'Integrations', Connect, 'Understand what is available and what still needs a connection.'],

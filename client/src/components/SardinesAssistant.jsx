@@ -47,7 +47,7 @@ function ExtractionResult({ analysis, sourceContent, sourceType, onSaved }) {
     setSaving(true); setSaveError('');
     try {
       const result = await saveForReview(sourceType, sourceContent, analysis);
-      setSaved(result.duplicate ? 'Already saved. Existing review records were preserved.' : 'Saved for review in the Promise Queue.');
+      setSaved(result.duplicate ? 'Already saved. Existing review records were preserved.' : 'Saved for review in the Task Queue.');
       onSaved?.();
     } catch (err) { setSaveError(err.message); }
     finally { setSaving(false); }
@@ -78,12 +78,12 @@ function ExtractionResult({ analysis, sourceContent, sourceType, onSaved }) {
       </div>
       {saving && <InlineLoading description="Saving review records…" />}
       {saved && <InlineNotification kind="success" title="Stored" subtitle={saved} hideCloseButton />}
-      {saved && <a href="#/promises" className="sa-link">Open Promise Queue →</a>}
+      {saved && <a href="#/promises" className="sa-link">Open Task Queue →</a>}
       {saveError && <InlineNotification kind="error" title="Save failed" subtitle={saveError} hideCloseButton />}
       {syncing && <InlineLoading description="Syncing contacts to HubSpot…" />}
       {syncResult && <InlineNotification kind="success" title="CRM sync complete!" subtitle={syncResult} hideCloseButton />}
       {syncError && <InlineNotification kind="error" title="CRM sync failed" subtitle={syncError} hideCloseButton />}
-      {[['Customer Promises', analysis.promises], ['Action Items', analysis.actions], ['Blockers', analysis.blockers]].map(([label, items]) => (
+      {[['Customer Tasks', analysis.promises], ['Action Items', analysis.actions], ['Blockers', analysis.blockers]].map(([label, items]) => (
         <section key={label}>
           <h4 className="sa-section-label">{label}</h4>
           {!items?.length && <p className="sa-muted">None identified.</p>}

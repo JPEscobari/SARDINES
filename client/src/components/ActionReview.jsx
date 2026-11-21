@@ -32,7 +32,7 @@ export function ActionCard({ action, promises, onSaved }) {
     {locked && <SlackFollowup action={action} onSaved={onSaved} />}
     <details className="review-draft" open={!locked}><summary>{locked ? 'Reviewed fields (read-only)' : 'Review draft'}</summary>
     <form onSubmit={save} className="review-fields">
-      <Select id={`${action.id}-promise`} labelText="Associated Promise" value={draft.promiseId} disabled={busy || locked}
+      <Select id={`${action.id}-promise`} labelText="Associated Task" value={draft.promiseId} disabled={busy || locked}
         onChange={e => setDraft(d => ({ ...d, promiseId: e.target.value }))}>
         <SelectItem value="" text="Unlinked — select explicitly" />
         {promises.filter(p => p.sourceId === action.sourceId).map(p => <SelectItem key={p.id} value={p.id} text={`${p.customerName || 'Customer unresolved'} · ${p.title}`} />)}
@@ -76,9 +76,9 @@ export default function ActionReview({ refreshKey, onChanged, selectedId = '' })
     {actions.loading || promises.loading ? <InlineLoading description="Loading actions and promises…" /> : actions.error || promises.error ? <InlineNotification kind="error" title="Follow-ups unavailable" subtitle={actions.error || promises.error} hideCloseButton /> : <div className="master-detail">
       <aside className="action-list" aria-label="Choose an action"><Search id="action-search" labelText="Search actions" placeholder="Search action or customer" value={query} onChange={e => setQuery(e.target.value)} /><Select id="action-filter" labelText="Action / follow-up status" value={status} onChange={e => setStatus(e.target.value)}><SelectItem value="all" text="All statuses" />{[...new Set(all.map(statusOf))].map(s => <SelectItem key={s} value={s} text={readable(s)} />)}</Select>
         <p className="result-count">{filtered.length} of {all.length} loaded actions</p>{!filtered.length && <p className="empty-state">No actions match. Save a source with an action or change the filter.</p>}
-        {filtered.map(a => <a key={a.id} href={routeHref('follow-ups', a.id)} className={`action-option ${selectedId === a.id ? 'selected' : ''}`} aria-current={selectedId === a.id ? 'true' : undefined}><Tag type={statusOf(a) === 'replied' ? 'green' : 'blue'}>{readable(statusOf(a))}</Tag><strong>{a.review?.title || a.description}</strong><span>{linked(a)?.customerName || 'Customer unresolved'}</span><span>{linked(a)?.title || 'No Promise linked'}</span></a>)}
+        {filtered.map(a => <a key={a.id} href={routeHref('follow-ups', a.id)} className={`action-option ${selectedId === a.id ? 'selected' : ''}`} aria-current={selectedId === a.id ? 'true' : undefined}><Tag type={statusOf(a) === 'replied' ? 'green' : 'blue'}>{readable(statusOf(a))}</Tag><strong>{a.review?.title || a.description}</strong><span>{linked(a)?.customerName || 'Customer unresolved'}</span><span>{linked(a)?.title || 'No Task linked'}</span></a>)}
       </aside>
-      <div className="action-detail">{selected ? <ActionCard key={`${selected.id}:${selected.version}`} action={selected} promises={promises.data.promises} onSaved={message => { setNotice(message); setRevision(r => r + 1); onChanged?.(); }} /> : <Tile className="empty-detail"><h2>{selectedId ? 'Action not found' : 'Choose an action'}</h2><p>Select an action to inspect its evidence, review ownership and prepare a Slack follow-up.</p><p>Replies record progress. They never complete a Promise automatically.</p></Tile>}</div>
+      <div className="action-detail">{selected ? <ActionCard key={`${selected.id}:${selected.version}`} action={selected} promises={promises.data.promises} onSaved={message => { setNotice(message); setRevision(r => r + 1); onChanged?.(); }} /> : <Tile className="empty-detail"><h2>{selectedId ? 'Action not found' : 'Choose an action'}</h2><p>Select an action to inspect its evidence, review ownership and prepare a Slack follow-up.</p><p>Replies record progress. They never complete a Task automatically.</p></Tile>}</div>
     </div>}
   </section>;
 }
