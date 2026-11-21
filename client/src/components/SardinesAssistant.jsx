@@ -116,9 +116,13 @@ export default function SardinesAssistant({ onSaved }) {
   const [transcribing, setTranscribing] = useState(false);
   const [sourceType, setSourceType] = useState('meeting_note');
   const [lastContent, setLastContent] = useState('');
-  const bottomRef = useRef(null);
+  const lastMsgRef = useRef(null);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+  useEffect(() => {
+    if (!loading) {
+      lastMsgRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [messages, loading]);
 
   async function send(text) {
     const trimmed = (text || input).trim();
@@ -151,10 +155,11 @@ export default function SardinesAssistant({ onSaved }) {
     <div className="sardines-assistant">
       <div className="sa-messages">
         {messages.map((msg, i) => (
-          <MessageBubble key={i} msg={msg} sourceContent={lastContent} sourceType={sourceType} onSaved={onSaved} />
+          <div key={i} ref={i === messages.length - 1 ? lastMsgRef : null}>
+            <MessageBubble msg={msg} sourceContent={lastContent} sourceType={sourceType} onSaved={onSaved} />
+          </div>
         ))}
         {loading && <div className="sa-bubble sa-bubble--assistant"><InlineLoading description="SARDINES is thinking…" /></div>}
-        <div ref={bottomRef} />
       </div>
 
       {messages.length === 1 && (
