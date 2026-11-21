@@ -81,6 +81,37 @@ export const getReviewSource = id => reviewRequest(`/sources/${encodeURIComponen
 export const listSlackRecipients = () => reviewRequest('/slack-recipients');
 export const previewSlackFollowup = (id, patch) => reviewRequest(`/actions/${encodeURIComponent(id)}/slack-preview`, { method: 'POST', body: JSON.stringify(patch) });
 
+export async function syncToCRM(analysis, sourceContent) {
+  // Collect unique contact names from promises and actions to tell the agent who to sync.
+  const contacts = [];
+  for (const p of analysis.promises || []) {
+    if (p.customerName) contacts.push(p.customerName);
+  }
+  for (const a of analysis.actions || []) {
+    if (a.ownerName) contacts.push(a.ownerName);
+  }
+  const unique = [...new Set(contacts)];
+
+  if (!unique.length) {
+    throw new Error('No contacts were identified in this extraction to sync.');
+  }
+
+  // Send the original source text so the agent can extract all available details
+  // (email, phone, company, title, etc.) without needing to ask the user again.
+  const message = [
+    `Please create or update the following contacts in HubSpot CRM using the details available in the source text below. Do not ask for information that is already present in the source.`,
+    ``,
+    `Contacts to sync: ${unique.join(', ')}`,
+    ``,
+    `Source text:`,
+    `---`,
+    sourceContent || '(no source text available)',
+    `---`,
+  ].join('\n');
+
+  return chatAgent(message);
+}
+
 export async function chatAgent(message, history = []) {
   let response;
   try {

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button, TextArea, InlineLoading, InlineNotification, Tile } from '@carbon/react';
 import { Send, Attachment, Microphone, Stop } from '@carbon/icons-react';
-import { analyzeText, saveForReview, transcribeAudio, chatAgent } from '../services/api';
+import { analyzeText, saveForReview, transcribeAudio, chatAgent, syncToCRM } from '../services/api';
 import AudioUpload from './AudioUpload';
 import { useMicRecorder } from '../hooks/useMicRecorder';
 import './SardinesAssistant.css';
@@ -38,6 +38,9 @@ function ExtractionResult({ analysis, sourceContent, sourceType, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState('');
   const [saveError, setSaveError] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState('');
+  const [syncError, setSyncError] = useState('');
 
   async function save() {
     if (saving || saved) return;
@@ -50,6 +53,16 @@ function ExtractionResult({ analysis, sourceContent, sourceType, onSaved }) {
     finally { setSaving(false); }
   }
 
+  async function syncCRM() {
+    if (syncing || syncResult) return;
+    setSyncing(true); setSyncError('');
+    try {
+      const reply = await syncToCRM(analysis, sourceContent);
+      setSyncResult(reply);
+    } catch (err) { setSyncError(err.message); }
+    finally { setSyncing(false); }
+  }
+
   return (
     <div className="sa-extraction">
       <div className="sa-extraction-header">
@@ -58,12 +71,18 @@ function ExtractionResult({ analysis, sourceContent, sourceType, onSaved }) {
           <p>{analysis.summary}</p>
           <p className="sa-muted">Extracted fields require review. Nothing is saved yet.</p>
         </div>
-        <Button size="sm" onClick={save} disabled={saving || !!saved}>Save for Review</Button>
+        <div className="sa-extraction-actions">
+          <Button size="sm" kind="secondary" onClick={syncCRM} disabled={syncing || !!syncResult}>👤 Sync Contact to CRM</Button>
+          <Button size="sm" onClick={save} disabled={saving || !!saved}>Save for Review</Button>
+        </div>
       </div>
       {saving && <InlineLoading description="Saving review records…" />}
       {saved && <InlineNotification kind="success" title="Stored" subtitle={saved} hideCloseButton />}
       {saved && <a href="#/promises" className="sa-link">Open Promise Queue →</a>}
       {saveError && <InlineNotification kind="error" title="Save failed" subtitle={saveError} hideCloseButton />}
+      {syncing && <InlineLoading description="Syncing contacts to HubSpot…" />}
+      {syncResult && <InlineNotification kind="success" title="CRM sync complete!" subtitle={syncResult} hideCloseButton />}
+      {syncError && <InlineNotification kind="error" title="CRM sync failed" subtitle={syncError} hideCloseButton />}
       {[['Customer Promises', analysis.promises], ['Action Items', analysis.actions], ['Blockers', analysis.blockers]].map(([label, items]) => (
         <section key={label}>
           <h4 className="sa-section-label">{label}</h4>

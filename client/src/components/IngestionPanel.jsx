@@ -61,7 +61,7 @@ export default function IngestionPanel({ onSaved }) {
       </Tabs>
       {error && <InlineNotification kind="error" title="Analysis failed" subtitle={error} hideCloseButton />}
       {analysis && <div className="analysis-results" aria-live="polite">
-        <div className="section-heading"><div><h2>Review the suggestions</h2><p>{saved ? 'Saved for review. Continue in the Promise Queue.' : 'Check evidence and unresolved fields. Nothing is saved yet.'}</p></div><Button onClick={save} disabled={saving || !!saved}>Save for Review</Button></div>
+        <div className="section-heading"><div><h2>Review the suggestions</h2><p>{saved ? 'Saved for review. Continue in the Promise Queue.' : 'Check evidence and unresolved fields. Nothing is saved yet.'}</p></div><Button onClick={save} disabled={saving || !!saved}>💾 Save to Tasks</Button></div>
         {saving && <InlineLoading description="Saving review records…" />}
         {saved && <InlineNotification kind="success" title="Stored" subtitle={saved} hideCloseButton />}
         {saved && <a href="#/promises">Open Promise Queue →</a>}

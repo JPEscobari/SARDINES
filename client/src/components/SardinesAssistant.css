@@ -83,6 +83,13 @@
   gap: 1rem;
 }
 
+.sa-extraction-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
 .sa-extraction-header p {
   margin: 0.25rem 0 0;
   font-size: 0.875rem;
