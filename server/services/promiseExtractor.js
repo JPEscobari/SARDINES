@@ -60,7 +60,7 @@ async function extractPromises(content) {
   ${content}
   `;
 
-  const response = await sendMessage(prompt);
+  const response = await sendMessage([{ role: 'user', content: prompt }]);
 
   const cleaned = response
     .trim()

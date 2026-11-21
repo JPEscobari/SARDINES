@@ -130,7 +130,17 @@ export default function SardinesAssistant({ onSaved }) {
     if (!trimmed || loading) return;
     setInput('');
     setError('');
+    // `messages` is captured from the current render closure — it is already up-to-date.
+    // Skip the welcome message (index 0) and serialise analysis bubbles as JSON strings.
+    const history = messages.slice(1).map(m => ({
+      role: m.role,
+      content: m.analysis ? JSON.stringify(m.analysis) : m.content,
+    }));
     setMessages(prev => [...prev, { role: 'user', content: trimmed }]);
+    sendWithHistory(trimmed, history);
+  }
+
+  async function sendWithHistory(trimmed, history) {
     setLoading(true);
     setLastContent(trimmed);
     // Only run structured extraction when the user loaded a transcript via the attach panel.
@@ -143,7 +153,7 @@ export default function SardinesAssistant({ onSaved }) {
         // Reset sourceType so follow-up messages go through chat, not extraction
         setSourceType('meeting_note');
       } else {
-        const reply = await chatAgent(trimmed);
+        const reply = await chatAgent(trimmed, history);
         // The agent may return a JSON extraction when given meeting notes or emails.
         // Detect this and render it as a structured result with a Save button.
         if (isExtractionResult(reply)) {

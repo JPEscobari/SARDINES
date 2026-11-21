@@ -25,7 +25,11 @@ async function getIamToken() {
  * @param {string} prompt - The user's message
  * @returns {Promise<string>} The agent's complete reply
  */
-async function sendMessage(prompt) {
+/**
+ * @param {Array<{role: 'user'|'assistant', content: string}>} messages
+ *   Full conversation history, oldest first, ending with the latest user message.
+ */
+async function sendMessage(messages) {
   // ── Stub mode ────────────────────────────────────────────────────────────────
   // Set WATSONX_STUB=true in .env to bypass the live API during development.
   if (process.env.WATSONX_STUB === 'true') {
@@ -61,7 +65,7 @@ async function sendMessage(prompt) {
     response = await axios.post(
       url,
       {
-        messages: [{ role: 'user', content: prompt }],
+        messages,
         context: {},
         stream: false,
       },

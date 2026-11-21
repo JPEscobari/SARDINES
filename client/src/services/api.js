@@ -81,12 +81,12 @@ export const getReviewSource = id => reviewRequest(`/sources/${encodeURIComponen
 export const listSlackRecipients = () => reviewRequest('/slack-recipients');
 export const previewSlackFollowup = (id, patch) => reviewRequest(`/actions/${encodeURIComponent(id)}/slack-preview`, { method: 'POST', body: JSON.stringify(patch) });
 
-export async function chatAgent(message) {
+export async function chatAgent(message, history = []) {
   let response;
   try {
     response = await fetch(`${API_BASE}/chat/agent`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }), signal: AbortSignal.timeout(90000),
+      body: JSON.stringify({ message, history }), signal: AbortSignal.timeout(90000),
     });
   } catch {
     throw new Error('Cannot reach the agent or the request timed out. Please try again.');
