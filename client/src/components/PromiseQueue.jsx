@@ -2,6 +2,7 @@ import SourceEvidence from './SourceEvidence';
 import { useEffect, useState } from 'react';
 import { Button, TextInput, Select, SelectItem, Tile, InlineLoading, InlineNotification, Tag, DataTable, Table, TableHead, TableRow, TableHeader, TableBody, TableCell, TableContainer, Search } from '@carbon/react';
 import { listPromises, listProposedActions, updatePromise } from '../services/api';
+import TaskTracker from './TaskTracker';
 import './PromiseQueue.css';
 import { routeHref, sourceLabels, dateLabel, readable } from '../app/navigation';
 import { getReviewSource, listAuditEvents } from '../services/api';
@@ -96,6 +97,8 @@ export default function PromiseQueue({ refreshKey, selectedId = '' }) {
   const baseRows = filtered.map(p => ({ id: p.id, customer: p.customerName || 'Unresolved', title: p.title, owner: p.ownerName || 'Unresolved', due: dateLabel(p.dueAt), dueRaw: p.dueAt ?? '', status: readable(p.status), source: sourceLabels[sources[p.sourceId]] || (sources[p.sourceId] === 'unavailable' ? 'Unavailable' : 'Loading…'), updated: dateLabel(p.updatedAt), updatedRaw: p.updatedAt ?? '' }));
   const rows = sortRows(baseRows, sortKey, sortDir);
   return <section className="promise-queue" aria-label="Task Queue">
+    <TaskTracker />
+    <div className="section-heading" style={{ marginTop: '2rem' }}><h2>Customer Promises</h2><p className="muted">Commitments extracted from analyzed sources and saved for review.</p></div>
     <div className="section-heading"><p>{promises.data?.backend === 'cloudant' ? 'IBM Cloudant' : promises.data?.backend === 'sqlite' ? 'Local SQLite' : 'Storage not verified'} · Saved commitments</p><Button kind="ghost" disabled={promises.loading} onClick={() => setRevision(r => r + 1)}>Refresh queue</Button></div>
     <div className="list-toolbar"><Search id="promise-search" labelText="Search tasks" placeholder="Search customer, task or owner" value={query} onChange={e => setQuery(e.target.value)} /><Select id="promise-filter" labelText="Status" value={status} onChange={e => setStatus(e.target.value)}><SelectItem value="all" text="All statuses" />{Object.keys(transitions).map(s => <SelectItem key={s} value={s} text={readable(s)} />)}</Select></div>
     {promises.loading ? <InlineLoading description="Loading saved tasks…" /> : promises.error ? <InlineNotification kind="error" title="Tasks unavailable" subtitle={promises.error} hideCloseButton /> : <>
