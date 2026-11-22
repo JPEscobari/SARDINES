@@ -31,7 +31,7 @@ export function PromiseCard({ promise, actions, onUpdated }) {
     <p>Date text: {promise.dueText || 'Not specified'}</p>
     <p>Reviewed deadline: {promise.dueAt || 'Unresolved'} · No reminder scheduled</p>
     {promise.extractedDueAt && <p>AI-suggested date (unverified): {promise.extractedDueAt}</p>}
-    <p>Source evidence</p><blockquote>{promise.sourceQuote}</blockquote>
+    <p>Source</p><blockquote>{promise.sourceQuote}</blockquote>
     <SourceEvidence sourceId={promise.sourceId} />
     <p className="source-reference">Updated {dateLabel(promise.updatedAt)} · Revision {promise.version}</p>
     <h4>Associated actions</h4>

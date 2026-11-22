@@ -185,7 +185,7 @@ export default function ActionReview({ refreshKey, onChanged, selectedId = '' })
           return <a key={a.id} href={routeHref('follow-ups', a.id)} className={`action-option ${selectedId === a.id ? 'selected' : ''}`} aria-current={selectedId === a.id ? 'true' : undefined}><Tag type={statusOf(a) === 'replied' ? 'green' : 'blue'}>{readable(statusOf(a))}</Tag><strong>{a.review?.title || a.description}</strong><span>{customer}</span>{owner && <span>Owner: {owner}</span>}</a>;
         })}
       </aside>
-      <div className="action-detail">{selected ? <ActionCard key={`${selected.id}:${selected.version}`} action={selected} promises={promises.data.promises} tasks={tasks} onSaved={message => { setNotice(message); setRevision(r => r + 1); onChanged?.(); }} onTaskCreated={handleTaskCreated} /> : <Tile className="empty-detail"><h2>{selectedId ? 'Action not found' : 'Choose an action'}</h2><p>Select an action to inspect its evidence, review ownership and prepare a Slack follow-up.</p><p>Replies record progress. They never complete a Task automatically.</p></Tile>}</div>
+      <div className="action-detail">{selected ? <ActionCard key={`${selected.id}:${selected.version}`} action={selected} promises={promises.data.promises} tasks={tasks} onSaved={message => { setNotice(message); setRevision(r => r + 1); onChanged?.(); }} onTaskCreated={handleTaskCreated} /> : <Tile className="empty-detail"><h2>{selectedId ? 'Action not found' : 'Choose an action'}</h2><p>Select an action to inspect its source, review ownership and prepare a Slack follow-up.</p><p>Replies record progress. They never complete a Task automatically.</p></Tile>}</div>
     </div>}
   </section>;
 }

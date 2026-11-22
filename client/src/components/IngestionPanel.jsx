@@ -81,7 +81,7 @@ export default function IngestionPanel({ onSaved }) {
               <p>Deadline text: {item.dueText || 'Not specified'} (requires review)</p>
               <p>Extracted date: {item.dueAt || 'Unresolved'} — no reminder scheduled</p>
             </>}
-            <p>Source evidence</p><blockquote>{item.sourceQuote}</blockquote>
+            <p>Source</p><blockquote>{item.sourceQuote}</blockquote>
           </Tile>)}
         </section>)}
       </div>}
