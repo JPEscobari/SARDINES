@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Select, SelectItem, TextInput, Tile, Tag, InlineNotification, InlineLoading, Search, DatePicker, DatePickerInput } from '@carbon/react';
-import { listPromises, listProposedActions, reviewAction, listSlackRecipients, getTasks, createTask, updateTaskStatus } from '../services/api';
+import { listPromises, listProposedActions, reviewAction, listSlackRecipients, getTasks, createTask, updateTaskStatus, approveActionViaAgent, rejectActionViaAgent } from '../services/api';
 import SlackFollowup from './SlackFollowup';
 import SourceEvidence from './SourceEvidence';
 import useResource from '../hooks/useResource';
@@ -150,9 +150,57 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
     {error && <InlineNotification kind="error" title="Action review failed" subtitle={error} hideCloseButton />}
 
     {!locked && <SlackFollowup action={action} onSaved={onSaved} />}
-    <Button disabled kind="secondary">Approve action</Button> <Button disabled kind="danger--tertiary">Reject action</Button>
-    <p>Approval and rejection require authenticated authorization. Execution is disabled for every action.</p>
+
+    <AgentActionButtons action={action} />
   </Tile>;
+}
+
+function AgentActionButtons({ action }) {
+  const [agentBusy, setAgentBusy] = useState(false);
+  const [agentReply, setAgentReply] = useState('');
+  const [agentError, setAgentError] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [showReject, setShowReject] = useState(false);
+  const reviewSaved = !!action.review;
+
+  async function handleApprove() {
+    setAgentBusy(true); setAgentReply(''); setAgentError('');
+    try {
+      const result = await approveActionViaAgent(action.id);
+      setAgentReply(result.reply);
+    } catch (e) { setAgentError(e.message); }
+    finally { setAgentBusy(false); }
+  }
+
+  async function handleReject() {
+    setAgentBusy(true); setAgentReply(''); setAgentError('');
+    try {
+      const result = await rejectActionViaAgent(action.id, rejectReason || 'No reason provided');
+      setAgentReply(result.reply);
+      setShowReject(false);
+    } catch (e) { setAgentError(e.message); }
+    finally { setAgentBusy(false); }
+  }
+
+  return <section aria-label="Action decision" className="agent-action-buttons">
+    <h4>Action decision</h4>
+    {!reviewSaved && <p className="muted">Save the action review above to enable approval.</p>}
+    {reviewSaved && !showReject && <>
+      <Button kind="primary" disabled={agentBusy} onClick={handleApprove}>Approve — create HubSpot task</Button>
+      {' '}
+      <Button kind="danger--tertiary" disabled={agentBusy} onClick={() => setShowReject(true)}>Reject action</Button>
+    </>}
+    {showReject && <div>
+      <TextInput id={`${action.id}-reject-reason`} labelText="Reason for rejection" value={rejectReason}
+        onChange={e => setRejectReason(e.target.value)} placeholder="Why is this action being rejected?" />
+      <Button kind="danger" disabled={agentBusy} onClick={handleReject} style={{ marginTop: '0.5rem' }}>Confirm rejection</Button>
+      {' '}
+      <Button kind="ghost" disabled={agentBusy} onClick={() => setShowReject(false)}>Cancel</Button>
+    </div>}
+    {agentBusy && <InlineLoading description="SARDINES is processing…" />}
+    {agentReply && <div style={{ marginTop: '0.75rem' }}><p><strong>SARDINES:</strong></p><p className="muted">{agentReply}</p></div>}
+    {agentError && <InlineNotification kind="error" title="Action failed" subtitle={agentError} hideCloseButton />}
+  </section>;
 }
 export default function ActionReview({ refreshKey, onChanged, selectedId = '' }) {
   const [revision, setRevision] = useState(0), [query, setQuery] = useState(''), [status, setStatus] = useState('all'), [sort, setSort] = useState('updated'), [notice, setNotice] = useState('');

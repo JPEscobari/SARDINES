@@ -40,6 +40,43 @@ function createReviewRouter(getRepository, { getPrincipal = () => null } = {}) {
   }
   router.get('/slack-recipients', (req, res) => res.json({ success: true, recipients: require('../integrations/slackFollowup').directory(), sendEnabled: false }));
   router.post('/actions/:id/slack-preview', handle(async (req, res, repo) => res.json({ success: true, action: await require('../integrations/slackFollowup').preview(repo, req.params.id, req.body), sendEnabled: false })));
+  router.post('/actions/:id/approve-agent', handle(async (req, res, repo) => {
+    const action = await repo.getAction(req.params.id);
+    if (!action) throw new ReviewError('Action not found', 404, 'NOT_FOUND');
+    if (!action.review) throw new ReviewError('Save the action review before approving', 400);
+    const r = action.review;
+    const { sendMessage } = require('../services/watsonx.service');
+    const message = `Create a HubSpot task with the following details:
+Title: ${r.title}
+Owner: ${r.ownerId || 'Unassigned'}
+Company: ${r.companyId || 'Unknown'}
+Due date: ${r.dueAt || 'No deadline set'}
+Notes: This task was approved via SARDINES. Source quote: ${action.sourceQuote}
+Confirm when the task has been created in HubSpot.`;
+    const reply = await sendMessage([
+      { role: 'user', content: 'You are the SARDINES orchestrator with access to HubSpot CRM. Use your HubSpot tool to create tasks exactly as instructed.' },
+      { role: 'assistant', content: 'Understood. I will create HubSpot tasks exactly as instructed.' },
+      { role: 'user', content: message },
+    ]);
+    res.json({ success: true, reply });
+  }));
+  router.post('/actions/:id/reject-agent', handle(async (req, res, repo) => {
+    const action = await repo.getAction(req.params.id);
+    if (!action) throw new ReviewError('Action not found', 404, 'NOT_FOUND');
+    const { reason = 'No reason provided' } = req.body || {};
+    const { sendMessage } = require('../services/watsonx.service');
+    const message = `Log a note in HubSpot for the following rejected action:
+Action: ${action.review?.title || action.description}
+Reason for rejection: ${reason}
+Source quote: ${action.sourceQuote}
+Please log this as a note on the relevant contact or company record and confirm.`;
+    const reply = await sendMessage([
+      { role: 'user', content: 'You are the SARDINES orchestrator with access to HubSpot CRM. Log rejection notes as instructed.' },
+      { role: 'assistant', content: 'Understood. I will log rejection notes in HubSpot as instructed.' },
+      { role: 'user', content: message },
+    ]);
+    res.json({ success: true, reply });
+  }));
   router.post('/actions/:id/slack-send-agent', handle(async (req, res, repo) => {
     const action = await repo.getAction(req.params.id);
     if (!action) throw new ReviewError('Action not found', 404, 'NOT_FOUND');

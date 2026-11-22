@@ -91,6 +91,8 @@ export const getReviewSource = id => reviewRequest(`/sources/${encodeURIComponen
 export const listSlackRecipients = () => reviewRequest('/slack-recipients');
 export const previewSlackFollowup = (id, patch) => reviewRequest(`/actions/${encodeURIComponent(id)}/slack-preview`, { method: 'POST', body: JSON.stringify(patch) });
 export const sendSlackViaAgent = id => reviewRequest(`/actions/${encodeURIComponent(id)}/slack-send-agent`, { method: 'POST', body: JSON.stringify({}) });
+export const approveActionViaAgent = id => reviewRequest(`/actions/${encodeURIComponent(id)}/approve-agent`, { method: 'POST', body: JSON.stringify({}) });
+export const rejectActionViaAgent = (id, reason) => reviewRequest(`/actions/${encodeURIComponent(id)}/reject-agent`, { method: 'POST', body: JSON.stringify({ reason }) });
 
 export async function syncToCRM(analysis, sourceContent) {
   // Collect unique contact names from promises and actions to tell the agent who to sync.
