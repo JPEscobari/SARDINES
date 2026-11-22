@@ -10,12 +10,12 @@ const WELCOME = {
   role: 'assistant',
   content: `Hi! I'm SARDINES 🐟 — your Sales AI for tracking customer commitments and follow-ups.
 
-You can talk to me in natural language or paste your meeting notes and emails directly — I'll handle the rest 😉.
+Ask me anything or paste your meeting notes and emails directly — I'll handle the rest 😉.
 
 Here's what I can do:
-• Find your next Task and Blockers from meeting notes or buyer emails
-• Look up contacts and deals in your HubSpot CRM
-• Retrieve message history and users from your Slack workspace
+• Find your next Task or Blockers from meeting notes or buyer emails
+• Look up contacts and deals in your customer database.
+• Retrieve messages from your Slack workspace
 
 What would you like to work on today?`,
 };
