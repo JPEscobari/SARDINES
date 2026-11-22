@@ -139,7 +139,6 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
           disabled={busy || locked}
         />
       </DatePicker>
-      <details className="field-guidance"><summary>Identity guidance</summary><p>Company and owner IDs are draft values, not verified CRM identities.</p></details>
       <Button type="submit" disabled={busy || locked}>Save action review</Button>
     </form>
     </details>
