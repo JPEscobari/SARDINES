@@ -58,9 +58,23 @@ export function PromiseCard({ promise, actions, onUpdated }) {
     {error && <InlineNotification kind="error" title="Review failed" subtitle={error} hideCloseButton />}
   </Tile>;
 }
+const SORT_COLS = new Set(['customer', 'owner', 'due', 'status', 'source', 'updated']);
+
+function sortRows(rows, key, dir) {
+  if (!key || dir === 'NONE') return rows;
+  const asc = dir === 'ASC' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    // For date columns use the raw ISO value stored in dueRaw / updatedRaw
+    const av = (key === 'due' ? a.dueRaw : key === 'updated' ? a.updatedRaw : a[key]) ?? '';
+    const bv = (key === 'due' ? b.dueRaw : key === 'updated' ? b.updatedRaw : b[key]) ?? '';
+    return av.toString().localeCompare(bv.toString(), undefined, { numeric: true }) * asc;
+  });
+}
+
 export default function PromiseQueue({ refreshKey, selectedId = '' }) {
   const [query, setQuery] = useState(''), [status, setStatus] = useState('all');
   const [revision, setRevision] = useState(0);
+  const [sortKey, setSortKey] = useState(''), [sortDir, setSortDir] = useState('NONE');
   const promises = useResource(listPromises, `${refreshKey}:${revision}`), actions = useResource(listProposedActions, `${refreshKey}:${revision}`), audit = useResource(listAuditEvents, `${refreshKey}:${revision}`);
   const [sources, setSources] = useState({});
   useEffect(() => {
@@ -79,13 +93,14 @@ export default function PromiseQueue({ refreshKey, selectedId = '' }) {
   const all = promises.data?.promises || [], selected = all.find(p => p.id === selectedId);
   const filtered = all.filter(p => (status === 'all' || p.status === status) && [p.customerName, p.title, p.ownerName].join(' ').toLowerCase().includes(query.toLowerCase()));
   const headers = [{ key: 'customer', header: 'Customer' }, { key: 'title', header: 'Task' }, { key: 'owner', header: 'Owner' }, { key: 'due', header: 'Due date' }, { key: 'status', header: 'Status' }, { key: 'source', header: 'Source' }, { key: 'updated', header: 'Updated' }];
-  const rows = filtered.map(p => ({ id: p.id, customer: p.customerName || 'Unresolved', title: p.title, owner: p.ownerName || 'Unresolved', due: dateLabel(p.dueAt), status: readable(p.status), source: sourceLabels[sources[p.sourceId]] || (sources[p.sourceId] === 'unavailable' ? 'Unavailable' : 'Loading…'), updated: dateLabel(p.updatedAt) }));
+  const baseRows = filtered.map(p => ({ id: p.id, customer: p.customerName || 'Unresolved', title: p.title, owner: p.ownerName || 'Unresolved', due: dateLabel(p.dueAt), dueRaw: p.dueAt ?? '', status: readable(p.status), source: sourceLabels[sources[p.sourceId]] || (sources[p.sourceId] === 'unavailable' ? 'Unavailable' : 'Loading…'), updated: dateLabel(p.updatedAt), updatedRaw: p.updatedAt ?? '' }));
+  const rows = sortRows(baseRows, sortKey, sortDir);
   return <section className="promise-queue" aria-label="Task Queue">
     <div className="section-heading"><p>{promises.data?.backend === 'cloudant' ? 'IBM Cloudant' : promises.data?.backend === 'sqlite' ? 'Local SQLite' : 'Storage not verified'} · Saved commitments</p><Button kind="ghost" disabled={promises.loading} onClick={() => setRevision(r => r + 1)}>Refresh queue</Button></div>
     <div className="list-toolbar"><Search id="promise-search" labelText="Search tasks" placeholder="Search customer, task or owner" value={query} onChange={e => setQuery(e.target.value)} /><Select id="promise-filter" labelText="Status" value={status} onChange={e => setStatus(e.target.value)}><SelectItem value="all" text="All statuses" />{Object.keys(transitions).map(s => <SelectItem key={s} value={s} text={readable(s)} />)}</Select></div>
     {promises.loading ? <InlineLoading description="Loading saved tasks…" /> : promises.error ? <InlineNotification kind="error" title="Tasks unavailable" subtitle={promises.error} hideCloseButton /> : <>
       <p className="result-count">{filtered.length} of {all.length} loaded tasks · Filtered locally</p>
-      {!rows.length ? <p className="empty-state">{all.length ? 'No tasks match your filters.' : 'No saved tasks yet. Analyze a source and choose Save for Review.'}</p> : <DataTable rows={rows} headers={headers}>{({ rows: tableRows, headers: tableHeaders, getTableProps, getHeaderProps, getRowProps }) => <TableContainer className="promise-table"><Table {...getTableProps()} size="md" aria-label="Saved tasks"><TableHead><TableRow>{tableHeaders.map(header => <TableHeader {...getHeaderProps({ header })} key={header.key}>{header.header}</TableHeader>)}</TableRow></TableHead><TableBody>{tableRows.map(row => <TableRow {...getRowProps({ row })} key={row.id} onClick={() => { window.location.hash = routeHref('promises', row.id); }} className={row.id === selectedId ? 'selected-row' : ''}>{row.cells.map(cell => <TableCell key={cell.id}>{cell.info.header === 'title' ? <a href={routeHref('promises', row.id)}>{cell.value}</a> : cell.info.header === 'status' ? <Tag type="blue">{cell.value}</Tag> : cell.value}</TableCell>)}</TableRow>)}</TableBody></Table></TableContainer>}</DataTable>}
+      {!rows.length ? <p className="empty-state">{all.length ? 'No tasks match your filters.' : 'No saved tasks yet. Analyze a source and choose Save for Review.'}</p> : <DataTable rows={rows} headers={headers}>{({ rows: tableRows, headers: tableHeaders, getTableProps, getHeaderProps, getRowProps }) => <TableContainer className="promise-table"><Table {...getTableProps()} size="md" aria-label="Saved tasks"><TableHead><TableRow>{tableHeaders.map(header => SORT_COLS.has(header.key) ? <TableHeader {...getHeaderProps({ header })} key={header.key} isSortable isSortHeader={sortKey === header.key} sortDirection={sortKey === header.key ? sortDir : 'NONE'} onClick={() => { const next = sortKey === header.key ? (sortDir === 'NONE' ? 'ASC' : sortDir === 'ASC' ? 'DESC' : 'NONE') : 'ASC'; setSortKey(header.key); setSortDir(next); }}>{header.header}</TableHeader> : <TableHeader {...getHeaderProps({ header })} key={header.key}>{header.header}</TableHeader>)}</TableRow></TableHead><TableBody>{tableRows.map(row => <TableRow {...getRowProps({ row })} key={row.id} onClick={() => { window.location.hash = routeHref('promises', row.id); }} className={row.id === selectedId ? 'selected-row' : ''}>{row.cells.map(cell => <TableCell key={cell.id}>{cell.info.header === 'title' ? <a href={routeHref('promises', row.id)}>{cell.value}</a> : cell.info.header === 'status' ? <Tag type="blue">{cell.value}</Tag> : cell.value}</TableCell>)}</TableRow>)}</TableBody></Table></TableContainer>}</DataTable>}
       {selectedId && !selected && <p role="status">This Task is not in the loaded records. Refresh or choose another record.</p>}
       {selected && <div className="record-detail"><div className="section-heading"><h2>Task detail</h2><a href={routeHref('promises')}>Close detail</a></div><PromiseCard key={`${selected.id}:${selected.version}`} promise={selected} actions={(actions.data?.actions || []).filter(a => a.promiseId === selected.id)} onUpdated={() => setRevision(r => r + 1)} />
         {actions.error && <p>Associated actions unavailable.</p>}<details><summary>Task audit history</summary>{audit.loading ? <p>Loading history…</p> : audit.error ? <p>Audit history unavailable.</p> : <ActivityTimeline events={audit.data.events.filter(e => e.entityId === selected.id)} promises={all} />}</details>
