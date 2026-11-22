@@ -155,7 +155,7 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
   </Tile>;
 }
 export default function ActionReview({ refreshKey, onChanged, selectedId = '' }) {
-  const [revision, setRevision] = useState(0), [query, setQuery] = useState(''), [status, setStatus] = useState('all'), [notice, setNotice] = useState('');
+  const [revision, setRevision] = useState(0), [query, setQuery] = useState(''), [status, setStatus] = useState('all'), [sort, setSort] = useState('updated'), [notice, setNotice] = useState('');
   const promises = useResource(listPromises, `${refreshKey}:${revision}`);
   const actions = useResource(listProposedActions, `${refreshKey}:${revision}`);
   const tasksResource = useResource(getTasks, `${refreshKey}:${revision}`);
@@ -163,7 +163,13 @@ export default function ActionReview({ refreshKey, onChanged, selectedId = '' })
   const all = actions.data?.actions || [];
   const statusOf = a => a.slackFollowup?.status || a.state || 'pending_review';
   const linked = a => promises.data?.promises.find(p => p.id === a.promiseId);
-  const filtered = all.filter(a => (status === 'all' || statusOf(a) === status) && [a.description, a.review?.title, linked(a)?.customerName, linked(a)?.title].join(' ').toLowerCase().includes(query.toLowerCase()));
+  const filtered = all
+    .filter(a => (status === 'all' || statusOf(a) === status) && [a.description, a.review?.title, linked(a)?.customerName, linked(a)?.title].join(' ').toLowerCase().includes(query.toLowerCase()))
+    .slice()
+    .sort((a, b) => {
+      const key = sort === 'updated' ? 'updatedAt' : 'createdAt';
+      return new Date(b[key]) - new Date(a[key]);
+    });
   const selected = all.find(a => a.id === selectedId);
   const handleTaskCreated = () => setRevision(r => r + 1);
   return <section aria-label="Action Review">
@@ -171,7 +177,7 @@ export default function ActionReview({ refreshKey, onChanged, selectedId = '' })
     <div className="section-heading"><p className="muted">A saved review is not approval. Send confirmation stays in the restricted local demo workflow.</p><Button kind="ghost" disabled={actions.loading} onClick={() => setRevision(r => r + 1)}>Refresh actions</Button></div>
     {notice && <InlineNotification kind="success" title="Saved" subtitle={notice} onCloseButtonClick={() => setNotice('')} />}
     {actions.loading || promises.loading ? <InlineLoading description="Loading actions and promises…" /> : actions.error || promises.error ? <InlineNotification kind="error" title="Follow-ups unavailable" subtitle={actions.error || promises.error} hideCloseButton /> : <div className="master-detail">
-      <aside className="action-list" aria-label="Choose an action"><Search id="action-search" labelText="Search actions" placeholder="Search action or customer" value={query} onChange={e => setQuery(e.target.value)} /><Select id="action-filter" labelText="Action / follow-up status" value={status} onChange={e => setStatus(e.target.value)}><SelectItem value="all" text="All statuses" />{[...new Set(all.map(statusOf))].map(s => <SelectItem key={s} value={s} text={readable(s)} />)}</Select>
+      <aside className="action-list" aria-label="Choose an action"><Search id="action-search" labelText="Search actions" placeholder="Search action or customer" value={query} onChange={e => setQuery(e.target.value)} /><Select id="action-filter" labelText="Status" value={status} onChange={e => setStatus(e.target.value)}><SelectItem value="all" text="All statuses" />{[...new Set(all.map(statusOf))].map(s => <SelectItem key={s} value={s} text={readable(s)} />)}</Select><Select id="action-sort" labelText="Sort by" value={sort} onChange={e => setSort(e.target.value)}><SelectItem value="updated" text="Recently updated" /><SelectItem value="created" text="Newest first" /></Select>
         <p className="result-count">{filtered.length} of {all.length} loaded actions</p>{!filtered.length && <p className="empty-state">No actions match. Save a source with an action or change the filter.</p>}
         {filtered.map(a => {
           const customer = linked(a)?.customerName || promises.data?.promises.find(p => p.sourceId === a.sourceId && p.customerName)?.customerName || 'Customer unresolved';
