@@ -96,3 +96,4 @@
 @media (max-width: 700px) { .promise-card .review-fields { grid-template-columns: minmax(0,1fr); } }
 .linked-task-status { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .linked-task-status p { margin: 0; font-size: .875rem; flex: 1 1 100%; }
+.date-pill { display: inline; font-family: 'IBM Plex Mono', 'Menlo', monospace; font-size: .8rem; background: #e8e8e8; border: 1px solid #c6c6c6; border-radius: 3px; padding: .1rem .4rem; color: #161616; }

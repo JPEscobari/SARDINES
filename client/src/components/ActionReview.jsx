@@ -76,10 +76,10 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
   }
 
   return <Tile className="promise-card">
-    <h3>{action.review?.title || action.description}</h3>
+    <h3><strong>{action.review?.title || action.description}</strong></h3>
     <Tag type="blue">Review: {readable(action.state || 'pending_review')}</Tag>
-    <p>SARDINES Suggestion: {action.description}</p>
-    <p>Extracted owner: {action.ownerName || 'Unresolved'} · Date wording: {action.dueText || 'Unresolved'}</p>
+    <p><strong>SARDINES Suggestion:</strong> {action.description}</p>
+    <p><strong>Extracted owner:</strong> {action.ownerName || 'Unresolved'} · <strong>Date:</strong> {action.dueText ? <code className="date-pill">{action.dueText}</code> : 'Unresolved'}</p>
     <blockquote>{action.sourceQuote}</blockquote>
     <SourceEvidence sourceId={action.sourceId} />
 
