@@ -10,8 +10,8 @@ router.post('/', express.json({ limit: '128kb' }), async (req, res) => {
     return res.status(415).json({ error: 'Content-Type must be application/json' });
   }
   const { content, sourceType } = req.body || {};
-  if (!['meeting_note', 'buyer_email', 'audio_transcript', 'video_transcript'].includes(sourceType)) {
-    return res.status(400).json({ error: 'sourceType must be meeting_note, buyer_email, audio_transcript or video_transcript' });
+  if (!['meeting_note', 'buyer_email', 'audio_transcript', 'video_transcript', 'slack_message'].includes(sourceType)) {
+    return res.status(400).json({ error: 'sourceType must be meeting_note, buyer_email, audio_transcript, video_transcript or slack_message' });
   }
   if (typeof content !== 'string' || !content.trim()) {
     return res.status(400).json({ error: 'content must be a non-empty string' });

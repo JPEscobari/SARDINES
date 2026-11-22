@@ -268,3 +268,9 @@
   align-self: center;
   white-space: nowrap;
 }
+
+/* ── Generate Task button row (appears below plain assistant bubbles) ── */
+.sa-generate-task-row {
+  margin-top: 0.4rem;
+  padding-left: 0.1rem;
+}

@@ -62,18 +62,22 @@ function ExtractionResult({ analysis, sourceContent, sourceType, onSaved }) {
     finally { setSyncing(false); }
   }
 
+  const hasItems = !!(analysis.promises?.length || analysis.actions?.length || analysis.blockers?.length);
+
   return (
     <div className="sa-extraction">
       <div className="sa-extraction-header">
         <div>
-          <strong>Extraction complete</strong>
+          <strong>Analysis complete.</strong>
           <p>{analysis.summary}</p>
-          <p className="sa-muted">Extracted fields require review. Nothing is saved yet.</p>
+          {hasItems && <p className="sa-muted">Extracted fields require review. Nothing is saved yet.</p>}
         </div>
-        <div className="sa-extraction-actions">
-          <Button size="sm" kind="secondary" onClick={syncCRM} disabled={syncing || !!syncResult}>👤 Sync Contact to CRM</Button>
-          <Button size="sm" onClick={save} disabled={saving || !!saved}>Save for Review</Button>
-        </div>
+        {hasItems && (
+          <div className="sa-extraction-actions">
+            <Button size="sm" kind="secondary" onClick={syncCRM} disabled={syncing || !!syncResult}>👤 Sync Contact to CRM</Button>
+            <Button size="sm" onClick={save} disabled={saving || !!saved}>Save for Review</Button>
+          </div>
+        )}
       </div>
       {saving && <InlineLoading description="Saving review records…" />}
       {saved && <InlineNotification kind="success" title="Stored" subtitle={saved} hideCloseButton />}
@@ -82,26 +86,30 @@ function ExtractionResult({ analysis, sourceContent, sourceType, onSaved }) {
       {syncing && <InlineLoading description="Syncing contacts to HubSpot…" />}
       {syncResult && <InlineNotification kind="success" title="CRM sync complete!" subtitle={syncResult} hideCloseButton />}
       {syncError && <InlineNotification kind="error" title="CRM sync failed" subtitle={syncError} hideCloseButton />}
-      {[['Customer Tasks', analysis.promises], ['Action Items', analysis.actions], ['Blockers', analysis.blockers]].map(([label, items]) => (
-        <section key={label}>
-          <h4 className="sa-section-label">{label}</h4>
-          {!items?.length && <p className="sa-muted">None identified.</p>}
-          {items?.map((item, i) => (
-            <Tile key={i} className="sa-item-tile">
-              <strong>{item.title || item.description}</strong>
-              {'customerName' in item && <p>Customer: {item.customerName || 'Unresolved'}</p>}
-              {'ownerName' in item && <p>Owner: {item.ownerName ? `${item.ownerName} (identity unverified)` : 'Unresolved'}</p>}
-              {'dueText' in item && <p>Deadline: {item.dueText || 'Not specified'}{item.dueAt ? ` · ${item.dueAt}` : ''}</p>}
-              <blockquote className="sa-quote">{item.sourceQuote}</blockquote>
-            </Tile>
-          ))}
-        </section>
-      ))}
+      {(() => {
+        const allEmpty = !analysis.promises?.length && !analysis.actions?.length && !analysis.blockers?.length;
+        if (allEmpty) return <p className="sa-muted">No actionable tasks were found in these messages.</p>;
+        return [['Customer Tasks', analysis.promises], ['Action Items', analysis.actions], ['Blockers', analysis.blockers]].map(([label, items]) => (
+          <section key={label}>
+            <h4 className="sa-section-label">{label}</h4>
+            {!items?.length && <p className="sa-muted">None identified.</p>}
+            {items?.map((item, i) => (
+              <Tile key={i} className="sa-item-tile">
+                <strong>{item.title || item.description}</strong>
+                {'customerName' in item && <p>Customer: {item.customerName || 'Unresolved'}</p>}
+                {'ownerName' in item && <p>Owner: {item.ownerName ? `${item.ownerName} (identity unverified)` : 'Unresolved'}</p>}
+                {'dueText' in item && <p>Deadline: {item.dueText || 'Not specified'}{item.dueAt ? ` · ${item.dueAt}` : ''}</p>}
+                <blockquote className="sa-quote">{item.sourceQuote}</blockquote>
+              </Tile>
+            ))}
+          </section>
+        ));
+      })()}
     </div>
   );
 }
 
-function MessageBubble({ msg, sourceContent, sourceType, onSaved }) {
+function MessageBubble({ msg, sourceContent, sourceType, onSaved, onGenerateTask, generatingTask }) {
   if (msg.role === 'user') {
     return (
       <div className="sa-bubble sa-bubble--user">
@@ -114,7 +122,12 @@ function MessageBubble({ msg, sourceContent, sourceType, onSaved }) {
     return (
       <div className="sa-bubble sa-bubble--assistant">
         <span className="sa-role">SARDINES</span>
-        <ExtractionResult analysis={msg.analysis} sourceContent={sourceContent} sourceType={sourceType} onSaved={onSaved} />
+        <ExtractionResult
+          analysis={msg.analysis}
+          sourceContent={msg.sourceContent ?? sourceContent}
+          sourceType={msg.sourceType ?? sourceType}
+          onSaved={onSaved}
+        />
       </div>
     );
   }
@@ -122,6 +135,13 @@ function MessageBubble({ msg, sourceContent, sourceType, onSaved }) {
     <div className="sa-bubble sa-bubble--assistant">
       <span className="sa-role">SARDINES</span>
       <p className="sa-bubble-text" style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+      {onGenerateTask && (
+        <div className="sa-generate-task-row">
+          <Button size="sm" kind="ghost" onClick={onGenerateTask} disabled={generatingTask}>
+            {generatingTask ? '⏳ Identifying tasks…' : '🎯 Generate Task'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -136,6 +156,7 @@ export default function SardinesAssistant({ onSaved }) {
   const [micStage, setMicStage] = useState(''); // '' | 'recording' | 'processing'
   const [sourceType, setSourceType] = useState('meeting_note');
   const [lastContent, setLastContent] = useState('');
+  const [generatingTaskIdx, setGeneratingTaskIdx] = useState(null);
   const lastMsgRef = useRef(null);
   const { recording, start: startMic, stop: stopMic, error: micError } = useMicRecorder();
 
@@ -186,6 +207,30 @@ export default function SardinesAssistant({ onSaved }) {
     } finally { setLoading(false); }
   }
 
+  async function handleGenerateTask(idx, content) {
+    setGeneratingTaskIdx(idx);
+    // Strip markdown decoration so sourceQuote evidence checks pass.
+    // The agent wraps names/dates in **bold** and *italic* which aren't in the
+    // original Slack text — removing them gives the extractor clean prose to quote from.
+    const plain = content
+      .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold** → bold
+      .replace(/\*(.+?)\*/g, '$1')        // *italic* → italic
+      .replace(/`(.+?)`/g, '$1')          // `code` → code
+      .replace(/–/g, '-');                // em-dash → hyphen
+    try {
+      const data = await analyzeText('slack_message', plain);
+      // Store plain (stripped) content and sourceType on the message so ExtractionResult
+      // uses the correct text for saveForReview and syncToCRM — not the user's chat prompt.
+      setMessages(prev => prev.map((m, i) => i === idx
+        ? { role: 'assistant', analysis: data.analysis, sourceContent: plain, sourceType: 'slack_message' }
+        : m));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGeneratingTaskIdx(null);
+    }
+  }
+
   function handleTranscript(transcript) {
     setShowAttach(false);
     setInput(transcript);
@@ -222,7 +267,14 @@ export default function SardinesAssistant({ onSaved }) {
       <div className="sa-messages">
         {messages.map((msg, i) => (
           <div key={i} ref={i === messages.length - 1 ? lastMsgRef : null}>
-            <MessageBubble msg={msg} sourceContent={lastContent} sourceType={sourceType} onSaved={onSaved} />
+            <MessageBubble
+              msg={msg}
+              sourceContent={lastContent}
+              sourceType={sourceType}
+              onSaved={onSaved}
+              onGenerateTask={msg.role === 'assistant' && !msg.analysis && i > 0 ? () => handleGenerateTask(i, msg.content) : null}
+              generatingTask={generatingTaskIdx === i}
+            />
           </div>
         ))}
         {loading && <div className="sa-bubble sa-bubble--assistant"><InlineLoading description="SARDINES is thinking…" /></div>}

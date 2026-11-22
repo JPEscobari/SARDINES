@@ -93,7 +93,7 @@ test('extractor accepts fenced JSON and empty findings', async () => {
   await assert.rejects(extractPromises(' '), /Input text is required/);
 });
 
-for (const sourceType of ['meeting_note', 'buyer_email', 'audio_transcript', 'video_transcript']) {
+for (const sourceType of ['meeting_note', 'buyer_email', 'audio_transcript', 'video_transcript', 'slack_message']) {
   test(`${sourceType} accepts empty findings`, async () => {
     const analysis = { summary: 'No commitments.', promises: [], actions: [], blockers: [] };
     response = JSON.stringify(analysis);
