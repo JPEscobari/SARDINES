@@ -91,7 +91,11 @@ export default function PromiseQueue({ refreshKey, selectedId = '' }) {
     })();
     return () => { active = false; };
   }, [promises.data]);
-  const all = promises.data?.promises || [], selected = all.find(p => p.id === selectedId);
+  const allActions = actions.data?.actions || [];
+  // A Promise is considered "tasked" when at least one action explicitly linked to it has a taskId.
+  const taskedPromiseIds = new Set(allActions.filter(a => a.promiseId && a.taskId).map(a => a.promiseId));
+  const all = (promises.data?.promises || []).filter(p => !taskedPromiseIds.has(p.id));
+  const selected = (promises.data?.promises || []).find(p => p.id === selectedId);
   const filtered = all.filter(p => (status === 'all' || p.status === status) && [p.customerName, p.title, p.ownerName].join(' ').toLowerCase().includes(query.toLowerCase()));
   const headers = [{ key: 'customer', header: 'Customer' }, { key: 'title', header: 'Task' }, { key: 'owner', header: 'Owner' }, { key: 'due', header: 'Due date' }, { key: 'status', header: 'Status' }, { key: 'source', header: 'Source' }, { key: 'updated', header: 'Updated' }];
   const baseRows = filtered.map(p => ({ id: p.id, customer: p.customerName || 'Unresolved', title: p.title, owner: p.ownerName || 'Unresolved', due: dateLabel(p.dueAt), dueRaw: p.dueAt ?? '', status: readable(p.status), source: sourceLabels[sources[p.sourceId]] || (sources[p.sourceId] === 'unavailable' ? 'Unavailable' : 'Loading…'), updated: dateLabel(p.updatedAt), updatedRaw: p.updatedAt ?? '' }));
