@@ -102,7 +102,7 @@ export default function PromiseQueue({ refreshKey, selectedId = '' }) {
   const rows = sortRows(baseRows, sortKey, sortDir);
   return <section className="promise-queue" aria-label="Task Queue">
     <TaskTracker />
-    <div className="section-heading" style={{ marginTop: '2rem' }}><h2>Task Queue</h2><p className="muted">Commitments extracted from analyzed sources and saved for review.</p></div>
+    <div className="section-heading" style={{ marginTop: '2rem' }}><h2>Task Queue</h2><p className="muted">- Commitments extracted from analyzed sources and saved for review.</p></div>
     <div className="section-heading"><Button kind="ghost" disabled={promises.loading} onClick={() => setRevision(r => r + 1)}>Refresh queue</Button></div>
     <div className="list-toolbar"><Search id="promise-search" labelText="Search tasks" placeholder="Search customer, task or owner" value={query} onChange={e => setQuery(e.target.value)} /><Select id="promise-filter" labelText="Status" value={status} onChange={e => setStatus(e.target.value)}><SelectItem value="all" text="All statuses" />{Object.keys(transitions).map(s => <SelectItem key={s} value={s} text={readable(s)} />)}</Select></div>
     {promises.loading ? <InlineLoading description="Loading saved tasks…" /> : promises.error ? <InlineNotification kind="error" title="Tasks unavailable" subtitle={promises.error} hideCloseButton /> : <>
