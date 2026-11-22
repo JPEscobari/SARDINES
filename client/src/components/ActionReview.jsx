@@ -109,21 +109,21 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
     {locked && <SlackFollowup action={action} onSaved={onSaved} />}
     <details className="review-draft" open={!locked}><summary>{locked ? 'Reviewed fields (read-only)' : 'Review draft'}</summary>
     <form onSubmit={save} className="review-fields">
-      <Select id={`${action.id}-promise`} labelText="Associated Task" value={draft.promiseId} disabled={busy || locked}
+      <Select id={`${action.id}-promise`} labelText="Linked Promise" value={draft.promiseId} disabled={busy || locked}
         onChange={e => setDraft(d => ({ ...d, promiseId: e.target.value }))}>
-        <SelectItem value="" text="None" />
+        <SelectItem value="" text="None — no linked promise" />
         {promises.filter(p => p.sourceId === action.sourceId).map(p => <SelectItem key={p.id} value={p.id} text={`${p.customerName || 'Customer unresolved'} · ${p.title}`} />)}
       </Select>
-      <p className="muted">Select explicitly from this source. Save before choosing another action; unsaved draft edits are not retained.</p>
-      <Select id={`${action.id}-owner-mapping`} labelText="Development owner mapping" value={directory.data?.recipients.some(r => r.ownerId === draft.ownerId) ? draft.ownerId : ''} disabled={busy || locked || directory.loading}
+      <p className="muted">A Promise is a customer commitment extracted from the same source. Linking one is optional but required for approval.</p>
+      <Select id={`${action.id}-owner-mapping`} labelText="Slack recipient" value={directory.data?.recipients.some(r => r.ownerId === draft.ownerId) ? draft.ownerId : ''} disabled={busy || locked || directory.loading}
         onChange={e => setDraft(d => ({ ...d, ownerId: e.target.value }))}>
-        <SelectItem value="" text="Select an allowlisted owner or enter an ID below" />
+        <SelectItem value="" text="None — or type an owner ID below" />
         {[...new Map((directory.data?.recipients || []).map(r => [r.ownerId, r])).values()].map(r => <SelectItem key={r.ownerId} value={r.ownerId} text={r.label} />)}
       </Select>
-      {directory.error && <p>Owner directory unavailable. Existing draft fields remain visible.</p>}
+      {directory.error && <p>Slack recipient list unavailable. Type an owner ID directly below.</p>}
       {[
-        ['title', 'Reviewed task title'], ['companyId', 'Customer company ID (unverified draft)'],
-        ['ownerId', 'Responsible owner ID (unverified draft)'],
+        ['title', 'Reviewed task title'], ['companyId', 'Customer company'],
+        ['ownerId', 'Contact owner'],
       ].map(([key, label]) => <TextInput key={key} id={`${action.id}-${key}`} labelText={label} value={draft[key] || ''} disabled={busy || locked}
         onChange={e => setDraft(d => ({ ...d, [key]: e.target.value }))} />)}
       <DatePicker
