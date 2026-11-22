@@ -35,6 +35,16 @@ export async function updateTaskStatus(id, status) {
   return res.json();
 }
 
+export async function createTask({ title, owner, deadline }) {
+  const res = await fetch(`${API_BASE}/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, owner, deadline }),
+  });
+  if (!res.ok) throw new Error('Failed to create task');
+  return res.json();
+}
+
 export async function getDecisions() {
   const res = await fetch(`${API_BASE}/decisions`);
   if (!res.ok) throw new Error('Failed to fetch decisions');

@@ -26,15 +26,17 @@ function invalidate(a, reason) {
   return { action: next, events: [{ ...event(a, 'approval_invalidated', null, [], { reason, approvalSnapshot: a.approval }), actorType: 'system' }] };
 }
 function reviewAction(a, patch, promises) {
-  versionCheck(a, patch, ['version', 'promiseId', 'title', 'companyId', 'ownerId', 'dueAt']);
+  versionCheck(a, patch, ['version', 'promiseId', 'title', 'companyId', 'ownerId', 'dueAt', 'taskId']);
   if (Object.keys(patch).length < 2) fail('Review fields required');
   const promiseId = 'promiseId' in patch ? patch.promiseId : a.promiseId;
   if (promiseId !== null && !promises.some(p => p.id === promiseId && p.sourceId === a.sourceId)) fail('Select a Promise from this source; cross-source linking is not supported');
+  const taskId = 'taskId' in patch ? patch.taskId : (a.taskId || null);
+  if (taskId !== null && (typeof taskId !== 'string' || !taskId.trim())) fail('taskId must be a non-empty string or null');
   const review = { ...draftOf(a) };
   for (const k of ['title', 'companyId', 'ownerId', 'dueAt']) if (k in patch) review[k] = patch[k];
   if (typeof review.title !== 'string' || !review.title.trim()) fail('Task title is required');
   dateCheck(review.dueAt);
-  const next = validateEntity({ ...a, promiseId, review, state: 'pending_review', approvalStatus: 'pending', approval: null, version: a.version + 1, updatedAt: new Date().toISOString() });
+  const next = validateEntity({ ...a, promiseId, taskId, review, state: 'pending_review', approvalStatus: 'pending', approval: null, version: a.version + 1, updatedAt: new Date().toISOString() });
   const events = [event(a, 'action_reviewed', null, Object.keys(patch).filter(k => k !== 'version'))];
   if (stateOf(a) === 'approved') events.push(event(a, 'approval_invalidated', null, [], { reason: 'Action review changed', approvalSnapshot: a.approval }));
   return { action: next, events };

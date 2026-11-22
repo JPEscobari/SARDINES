@@ -94,3 +94,5 @@
 .promise-card > section details { margin: 1rem 0; }
 .promise-card > section .cds--form-item { margin: 1rem 0; }
 @media (max-width: 700px) { .promise-card .review-fields { grid-template-columns: minmax(0,1fr); } }
+.linked-task-status { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.linked-task-status p { margin: 0; font-size: .875rem; flex: 1 1 100%; }

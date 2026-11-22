@@ -19,7 +19,7 @@ const fields = {
 const actionSchemas = require('./actionSchemas');
 const optional = {
   source: { slack: require('./slackSource').schema },
-  action: { slackFollowup: require('./slackFollowupSchema'), state: { enum: ['pending_review', 'approved', 'rejected'] }, review: actionSchemas.review, approval: { anyOf: [actionSchemas.approval, { type: 'null' }] } },
+  action: { slackFollowup: require('./slackFollowupSchema'), state: { enum: ['pending_review', 'approved', 'rejected'] }, review: actionSchemas.review, approval: { anyOf: [actionSchemas.approval, { type: 'null' }] }, taskId: { type: ['string', 'null'], maxLength: 200 } },
   audit: { followupSnapshot: require('./slackFollowupSchema'), approvalSnapshot: actionSchemas.approval, reason: text },
 };
 const validators = Object.fromEntries(Object.entries(fields).map(([type, properties]) => [type, ajv.compile({ type: 'object', additionalProperties: false, properties: { ...properties, ...optional[type] }, required: Object.keys(properties) })]));
