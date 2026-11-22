@@ -90,6 +90,7 @@ export const reviewAction = (id, patch) => reviewRequest(`/actions/${encodeURICo
 export const getReviewSource = id => reviewRequest(`/sources/${encodeURIComponent(id)}`);
 export const listSlackRecipients = () => reviewRequest('/slack-recipients');
 export const previewSlackFollowup = (id, patch) => reviewRequest(`/actions/${encodeURIComponent(id)}/slack-preview`, { method: 'POST', body: JSON.stringify(patch) });
+export const sendSlackViaAgent = id => reviewRequest(`/actions/${encodeURIComponent(id)}/slack-send-agent`, { method: 'POST', body: JSON.stringify({}) });
 
 export async function syncToCRM(analysis, sourceContent) {
   // Collect unique contact names from promises and actions to tell the agent who to sync.

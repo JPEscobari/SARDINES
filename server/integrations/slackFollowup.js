@@ -35,7 +35,7 @@ async function preview(repo, id, input, env = process.env) {
     const p = reviewed(a, promises);
     const recipient = directory(env).find(r => r.userId === input.userId && r.ownerId === a.review.ownerId);
     if (!recipient) throw new ReviewError('Recipient must match the configured owner directory');
-    const text = escape(`Development follow-up\nAction: ${a.review.title}\nPromise: ${p.title}\nDeadline: ${a.review.dueAt || 'Unresolved'}\nBlocker: ${blockers}\nSource: ${sourceReference}\nEvidence: ${a.sourceQuote}\nPlease reply in this thread with progress or blockers. A reply does not complete the Promise.`);
+    const text = escape(`Development follow-up\nAction: ${a.review.title}\nPromise: ${p.title}\nDeadline: ${a.review.dueAt || 'Unresolved'}\nBlocker: ${blockers}\nSource: ${sourceReference}\nSource quote: ${a.sourceQuote}\nPlease reply in this thread with progress or blockers. A reply does not complete the Promise.`);
     if (text.length > 12000) throw new ReviewError('Follow-up is too long');
     const snapshot = fingerprint(a, p);
     const payloadHash = hash([recipient, text, snapshot]);

@@ -40,6 +40,20 @@ function createReviewRouter(getRepository, { getPrincipal = () => null } = {}) {
   }
   router.get('/slack-recipients', (req, res) => res.json({ success: true, recipients: require('../integrations/slackFollowup').directory(), sendEnabled: false }));
   router.post('/actions/:id/slack-preview', handle(async (req, res, repo) => res.json({ success: true, action: await require('../integrations/slackFollowup').preview(repo, req.params.id, req.body), sendEnabled: false })));
+  router.post('/actions/:id/slack-send-agent', handle(async (req, res, repo) => {
+    const action = await repo.getAction(req.params.id);
+    if (!action) throw new ReviewError('Action not found', 404, 'NOT_FOUND');
+    const f = action.slackFollowup;
+    if (!f || f.status !== 'preview') throw new ReviewError('Prepare a preview before sending', 400);
+    const { sendMessage } = require('../services/watsonx.service');
+    const message = `Send a Slack direct message to the user with Slack user ID ${f.recipient.userId} in workspace ${f.recipient.teamId}. The message content is exactly:\n\n${f.text}\n\nDo not modify the message content. Confirm when sent.`;
+    const reply = await sendMessage([
+      { role: 'user', content: 'You are the SARDINES orchestrator. Use your Slack tool to send direct messages exactly as instructed.' },
+      { role: 'assistant', content: 'Understood. I will send Slack messages exactly as instructed without modification.' },
+      { role: 'user', content: message },
+    ]);
+    res.json({ success: true, reply });
+  }));
   router.get('/audit-events', handle(async (req, res, repo) => res.json({ success: true, events: await repo.listAuditEvents() })));
   router.use((req, res) => res.status(404).json({ success: false, code: 'NOT_FOUND', error: 'Review endpoint not found; approval and execution are unavailable' }));
   router.use((error, req, res, next) => {
