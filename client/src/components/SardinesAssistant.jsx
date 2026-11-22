@@ -75,7 +75,7 @@ function ExtractionResult({ analysis, sourceContent, sourceType, onSaved }) {
         {hasItems && (
           <div className="sa-extraction-actions">
             <Button size="sm" kind="secondary" onClick={syncCRM} disabled={syncing || !!syncResult}>👤 Sync Contact to CRM</Button>
-            <Button size="sm" onClick={save} disabled={saving || !!saved}>Save for Review</Button>
+            <Button size="sm" onClick={save} disabled={saving || !!saved}>💾 Save Task for Review</Button>
           </div>
         )}
       </div>
