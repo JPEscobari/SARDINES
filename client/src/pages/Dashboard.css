@@ -89,7 +89,7 @@
 .review-draft { margin: 1.25rem 0; border-top: 1px solid #e0e0e0; padding-top: 1rem; }
 .review-draft > summary { font-weight: 600; font-size: .875rem; cursor: pointer; }
 .promise-card .review-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
-.review-fields > p, .review-fields > .field-guidance { grid-column: 1 / -1; }
+.review-fields > p, .review-fields > .field-guidance, .review-fields > .cds--btn { grid-column: 1 / -1; }
 .promise-card > section { border-top: 1px solid #e0e0e0; padding: 1rem 0; }
 .promise-card > section details { margin: 1rem 0; }
 .promise-card > section .cds--form-item { margin: 1rem 0; }
