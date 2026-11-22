@@ -24,7 +24,11 @@ const optional = {
 };
 const validators = Object.fromEntries(Object.entries(fields).map(([type, properties]) => [type, ajv.compile({ type: 'object', additionalProperties: false, properties: { ...properties, ...optional[type] }, required: Object.keys(properties) })]));
 function validateEntity(value) {
-  if (!validators[value.type]?.(value)) throw new ReviewError('Invalid operational record');
+  const validate = validators[value.type];
+  if (!validate?.(value)) {
+    if (validate?.errors) console.error('validateEntity errors:', JSON.stringify(validate.errors, null, 2));
+    throw new ReviewError('Invalid operational record');
+  }
   if (value.type === 'action' && value.approvalStatus === 'approved' && (!value.approval || value.state !== 'approved')) throw new ReviewError('Approval snapshot is required');
   return value;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Select, SelectItem, TextInput, Tile, Tag, InlineNotification, InlineLoading, Search } from '@carbon/react';
+import { Button, Select, SelectItem, TextInput, Tile, Tag, InlineNotification, InlineLoading, Search, DatePicker, DatePickerInput } from '@carbon/react';
 import { listPromises, listProposedActions, reviewAction, listSlackRecipients, getTasks, createTask, updateTaskStatus } from '../services/api';
 import SlackFollowup from './SlackFollowup';
 import SourceEvidence from './SourceEvidence';
@@ -8,10 +8,29 @@ import { routeHref, readable } from '../app/navigation';
 const STATUS_CYCLE = { open: 'in-progress', 'in-progress': 'done', done: 'open' };
 const STATUS_TYPE = { open: 'blue', 'in-progress': 'purple', done: 'green' };
 
+// Convert a Date object or date string from the picker (M/D/YYYY) to UTC ISO.
+function toUtcIso(value) {
+  if (!value) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(d.getTime())) return null;
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+}
+
+// Derive a sensible initial companyId from promises linked to the same source.
+function guessCompanyId(action, promises) {
+  const p = promises.find(pr => pr.sourceId === action.sourceId && pr.customerName);
+  return p?.customerName || '';
+}
+
 export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) {
   const directory = useResource(listSlackRecipients);
   const locked = !!action.slackFollowup && action.slackFollowup.status !== 'preview';
-  const initial = action.review || { title: action.description, companyId: '', ownerId: '', dueAt: '' };
+  const initial = action.review || {
+    title: action.description,
+    companyId: guessCompanyId(action, promises),
+    ownerId: action.ownerName || '',
+    dueAt: action.extractedDueAt || '',
+  };
   const [draft, setDraft] = useState({ ...initial, promiseId: action.promiseId || '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -59,7 +78,7 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
   return <Tile className="promise-card">
     <h3>{action.review?.title || action.description}</h3>
     <Tag type="blue">Review: {readable(action.state || 'pending_review')}</Tag>
-    <p>Original AI suggestion: {action.description}</p>
+    <p>SARDINES Suggestion: {action.description}</p>
     <p>Extracted owner: {action.ownerName || 'Unresolved'} · Date wording: {action.dueText || 'Unresolved'}</p>
     <blockquote>{action.sourceQuote}</blockquote>
     <SourceEvidence sourceId={action.sourceId} />
@@ -104,10 +123,23 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
       {directory.error && <p>Owner directory unavailable. Existing draft fields remain visible.</p>}
       {[
         ['title', 'Reviewed task title'], ['companyId', 'Customer company ID (unverified draft)'],
-        ['ownerId', 'Responsible owner ID (unverified draft)'], ['dueAt', 'Action deadline (UTC ISO, optional)'],
+        ['ownerId', 'Responsible owner ID (unverified draft)'],
       ].map(([key, label]) => <TextInput key={key} id={`${action.id}-${key}`} labelText={label} value={draft[key] || ''} disabled={busy || locked}
         onChange={e => setDraft(d => ({ ...d, [key]: e.target.value }))} />)}
-      <details className="field-guidance"><summary>Identity and deadline guidance</summary><p>Deadline format: 2026-11-22T17:00:00.000Z. Leave blank when unresolved. Company and owner IDs are draft values, not verified CRM identities.</p></details>
+      <DatePicker
+        datePickerType="single"
+        dateFormat="m/d/Y"
+        value={draft.dueAt ? new Date(draft.dueAt).toLocaleDateString('en-US') : ''}
+        onChange={([date]) => setDraft(d => ({ ...d, dueAt: toUtcIso(date) || '' }))}
+      >
+        <DatePickerInput
+          id={`${action.id}-dueAt`}
+          labelText="Action deadline (optional)"
+          placeholder="mm/dd/yyyy"
+          disabled={busy || locked}
+        />
+      </DatePicker>
+      <details className="field-guidance"><summary>Identity guidance</summary><p>Company and owner IDs are draft values, not verified CRM identities.</p></details>
       <Button type="submit" disabled={busy || locked}>Save action review</Button>
     </form>
     </details>
