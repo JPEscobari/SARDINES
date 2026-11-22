@@ -36,6 +36,9 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
   const [error, setError] = useState('');
   const [taskBusy, setTaskBusy] = useState(false);
   const [taskError, setTaskError] = useState('');
+  // Track the latest server-side version so Create Task uses a fresh version
+  // even when the component hasn't remounted yet after a save.
+  const [currentVersion, setCurrentVersion] = useState(action.version);
 
   const linkedTask = tasks.find(t => t._id === action.taskId);
   const reviewSaved = !!action.review;
@@ -43,8 +46,9 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
   async function save(event) {
     event.preventDefault(); setBusy(true); setError('');
     try {
-      await reviewAction(action.id, { version: action.version, promiseId: draft.promiseId || null, title: draft.title,
+      const result = await reviewAction(action.id, { version: currentVersion, promiseId: draft.promiseId || null, title: draft.title,
         companyId: draft.companyId?.trim() || null, ownerId: draft.ownerId?.trim() || null, dueAt: draft.dueAt?.trim() || null });
+      setCurrentVersion(result.action.version);
       onSaved('Action review stored. Any previous approval was invalidated.');
     } catch (err) { setError(err.message); }
     finally { setBusy(false); }
@@ -58,7 +62,7 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
         owner: action.review.ownerId || '',
         deadline: action.review.dueAt || undefined,
       });
-      await reviewAction(action.id, { version: action.version, taskId: task._id });
+      await reviewAction(action.id, { version: currentVersion, taskId: task._id });
       onTaskCreated?.();
       onSaved('Task created and linked to this action.');
     } catch (err) { setTaskError(err.message); }
