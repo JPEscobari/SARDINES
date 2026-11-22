@@ -22,7 +22,7 @@ export default function SlackFollowup({ action, onSaved }) {
   const locked = f && f.status !== 'preview';
   return <section aria-label="Slack follow-up">
     <h4>Slack follow-up</h4>
-    {!locked && <p className="muted">Save the review, then prepare a preview. Sending requires separate confirmation in the restricted local demo terminal.</p>}
+    {!locked && <p className="muted">Select a recipient and preview the message before sending.</p>}
     <details open={!locked}><summary>{locked ? 'Preview controls (sending already started)' : 'Prepare a preview'}</summary>
     <Select id={`${action.id}-recipient`} labelText="Allowlisted recipient" value={userId} disabled={busy || (f && f.status !== 'preview')}
       onChange={e => setUserId(e.target.value)}>
