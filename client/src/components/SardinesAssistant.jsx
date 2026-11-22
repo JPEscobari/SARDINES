@@ -8,15 +8,14 @@ import './SardinesAssistant.css';
 
 const WELCOME = {
   role: 'assistant',
-  content: `Hi! I'm SARDINES — your Sales AI for tracking customer commitments and follow-ups.
+  content: `Hi! I'm SARDINES 🐟 — your Sales AI for tracking customer commitments and follow-ups.
 
-You can talk to me in natural language or paste your meeting notes and emails directly — I'll handle the rest.
+You can talk to me in natural language or paste your meeting notes and emails directly — I'll handle the rest 😉.
 
 Here's what I can do:
-• Extract Promises, Actions, and Blockers from meeting notes or buyer emails
+• Find your next Task and Blockers from meeting notes or buyer emails
 • Look up contacts and deals in your HubSpot CRM
 • Retrieve message history and users from your Slack workspace
-• Save extracted commitments to your review queue
 
 What would you like to work on today?`,
 };
