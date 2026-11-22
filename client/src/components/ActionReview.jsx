@@ -111,7 +111,7 @@ export function ActionCard({ action, promises, tasks, onSaved, onTaskCreated }) 
     <form onSubmit={save} className="review-fields">
       <Select id={`${action.id}-promise`} labelText="Associated Task" value={draft.promiseId} disabled={busy || locked}
         onChange={e => setDraft(d => ({ ...d, promiseId: e.target.value }))}>
-        <SelectItem value="" text="Unlinked — select explicitly" />
+        <SelectItem value="" text="None" />
         {promises.filter(p => p.sourceId === action.sourceId).map(p => <SelectItem key={p.id} value={p.id} text={`${p.customerName || 'Customer unresolved'} · ${p.title}`} />)}
       </Select>
       <p className="muted">Select explicitly from this source. Save before choosing another action; unsaved draft edits are not retained.</p>
